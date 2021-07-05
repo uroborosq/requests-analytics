@@ -9,10 +9,11 @@ class Parser(object):
 
     def __init__(self, path_, sheet_):
         self.file = xl.load_workbook(filename=path_)
-        self.sheet = file[sheet_]
+        self.sheet = self.file[sheet_]
 
     def parse(self, begin):
         for i in self.sheet:
-               tmp = Request(i[1], end_, id_, status_, type_, manager_, engineer_)
-
-
+            if self.requests.get(i[4].value) is None:
+                self.requests[i[1].value] = Request(i[4].value, i[5].value, i[1].value, i[6].value, i[10].value, "", "")
+            else:
+                print("Не опять, а снова")

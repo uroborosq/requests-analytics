@@ -4,7 +4,7 @@ from datetime import datetime
 class Request(object):
 
     def __init__(self, begin_, end_, id_, status_, type_, manager_, engineer_):
-        print(begin_ + "|" + end_)
+        #print(begin_ + "|" + end_)
         self.data_begin = datetime.strptime(begin_, '%d.%m.%Y %H:%M:%S')
         self.data_end = datetime.strptime(end_, '%d.%m.%Y %H:%M:%S')
         self.request_id = id_

@@ -5,7 +5,6 @@ from Analytics import AverageTimeForRequest
 from Analytics import PlotRequestsByTime
 from GUI import GUI
 
-
 # parser = Parser("1.xlsx", "TDSheet")
 # parser.parse("A1")
 app = GUI()

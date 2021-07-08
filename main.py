@@ -1,24 +1,17 @@
-from Request import Request
+import time
+
 from Parser import Parser
 from Analytics import AverageTimeForRequest
 from Analytics import PlotRequestsByTime
-#from PySide6 import QtCore, QtWidgets, QtGui
-import datetime
-import random
-import sys
+from GUI import GUI
 
 
-parser = Parser("1.xlsx", "TDSheet")
-parser.parse("A1")
+# parser = Parser("1.xlsx", "TDSheet")
+# parser.parse("A1")
+app = GUI()
 
-# a = AverageTimeForRequest(parser.requests)
-# print(a.analyse())
-# app = QtWidgets.QApplication([])
+print (app.str_sheet + " " + app.str_address)
 
-# widget = MyWidget()
-# widget.resize(800, 600)
-# widget.show()
 
-# sys.exit(app.exec())
-b = PlotRequestsByTime(parser.requests)
-b.make_plot()
+# b = PlotRequestsByTime(parser.requests)
+# b.make_plot()

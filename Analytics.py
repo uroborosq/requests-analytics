@@ -117,30 +117,34 @@ class PlotRequestsByTime(object):
         self.__fix_array__(self.requests_by_months, "month")
         self.__fix_array__(self.requests_by_quarters, "quarter")
         self.__fix_array__(self.done_requests_by_weeks, "week")
+        self.__fix_array__(self.done_requests_by_years, "year")
+        self.__fix_array__(self.done_requests_by_months, "month")
+        self.__fix_array__(self.done_requests_by_quarters, "quarter")
 
-    def make_plot(self):
+    def __sort_by_date(self, array):
+        keys = array.keys()
+        keys = sorted(keys)
+
+        new_array = {}
+        for i in keys:
+            new_array[i] = array[i]
+        return new_array
+
+    def __sort_all__(self):
+        self.requests_by_weeks = self.__sort_by_date(self.requests_by_weeks)
+        self.requests_by_years = self.__sort_by_date(self.requests_by_years)
+        self.requests_by_quarters = self.__sort_by_date(self.requests_by_quarters)
+        self.requests_by_months = self.__sort_by_date(self.requests_by_months)
+
+        self.done_requests_by_weeks = self.__sort_by_date(self.done_requests_by_weeks)
+        self.done_requests_by_years = self.__sort_by_date(self.done_requests_by_years)
+        self.done_requests_by_quarters = self.__sort_by_date(self.done_requests_by_quarters)
+        self.done_requests_by_months = self.__sort_by_date(self.done_requests_by_months)
+
+    def get(self):
         self.__collect__()
         self.__prepare_data__()
+        self.__sort_all__()
 
-        a = sorted(list(self.requests_by_weeks.keys()))
-        b = sorted(list(self.done_requests_by_weeks.keys()))
-        new = {}
-        new_again = {}
-        for i in a:
-            new[i] = self.requests_by_weeks[i]
-        for i in b:
-            new_again[i] = self.done_requests_by_weeks[i]
-        sum1 = 0
-        sum2 = 0
-
-        for i in new.values():
-            sum1 += i
-        for i in new_again.values():
-            sum2 += i
-        print(sum1 - sum2)
-
-        plt.plot_date(a, new.values(), linestyle='solid', label='Поступило')
-        plt.plot_date(b, new_again.values(), linestyle='solid', label='Выполнено')
-        plt.legend()
-        plt.grid(True)
-        plt.show()
+        return [self.requests_by_weeks, self.requests_by_months, self.requests_by_quarters, self.requests_by_years,
+                self.done_requests_by_weeks, self.requests_by_months, self.done_requests_by_quarters, self.requests_by_years]

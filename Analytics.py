@@ -147,4 +147,18 @@ class PlotRequestsByTime(object):
         self.__sort_all__()
 
         return [self.requests_by_weeks, self.requests_by_months, self.requests_by_quarters, self.requests_by_years,
-                self.done_requests_by_weeks, self.requests_by_months, self.done_requests_by_quarters, self.requests_by_years]
+                self.done_requests_by_weeks, self.done_requests_by_months, self.done_requests_by_quarters, self.done_requests_by_years]
+
+
+class PlotAverageTime(object):
+    def __init__(self, array):
+        self.array = dict(array)
+        self.year0 = {}
+        self.year1 = {}
+        self.year1 = {}
+
+
+        for i in self.array.values():
+
+
+

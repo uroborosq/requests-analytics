@@ -1,6 +1,6 @@
 import sys
 import matplotlib
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtWidgets
 from Parser import Parser
 import Analytics
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
@@ -8,25 +8,42 @@ from matplotlib.figure import Figure
 matplotlib.use('Qt5Agg')
 
 
+class MplCanvas(FigureCanvasQTAgg):
+    def __init__(self, parent=None, width=5, height=4, dpi=100, pos=111):
+        self.fig = Figure(figsize=(width, height), dpi=dpi)
+        # self.axes = fig.add_subplot(pos)
+        super(MplCanvas, self).__init__(self.fig)
+
+
 class MyWidget(QtWidgets.QMainWindow):
     def __init__(self, arr):
         super().__init__()
-        sc = MplCanvas(self, width=5, height=4, dpi=100)
+        self.plots = QtWidgets.QWidget()
+        self.layout = QtWidgets.QVBoxLayout()
+
+        figure = MplCanvas(self, width=5, height=4, dpi=100, pos=111)
+        weeks = figure.fig.add_subplot(221)
+        months = figure.fig.add_subplot(222)
+        quarters = figure.fig.add_subplot(223)
+        years = figure.fig.add_subplot(224)
         if arr is not None:
-            sc.axes.plot(arr[0].keys(), arr[0].values(), linestyle='solid', label='Поступило')
-            sc.axes.plot(arr[4].keys(), arr[4].values(), linestyle='solid', label='Выполнено')
-            sc.axes.legend()
-            sc.axes.grid(True)
-            self.setCentralWidget(sc)
+            self.__set_plot__(weeks, 0, arr, "По неделям")
+            self.__set_plot__(months, 1, arr, "По месяцам")
+            self.__set_plot__(quarters, 2, arr, "По кварталам")
+            self.__set_plot__(years, 3, arr, "По годам")
+
+            self.layout.addWidget(figure)
+            self.plots.setLayout(self.layout)
+            self.setCentralWidget(self.plots)
             self.show()
 
-
-class MplCanvas(FigureCanvasQTAgg):
-
-    def __init__(self, parent=None, width=5, height=4, dpi=100):
-        fig = Figure(figsize=(width, height), dpi=dpi)
-        self.axes = fig.add_subplot(111)
-        super(MplCanvas, self).__init__(fig)
+    def __set_plot__(self, plot, it, arr, name):
+        plot.plot(arr[it].keys(), arr[it].values(), linestyle='solid', label='Поступило')
+        plot.plot(arr[it + 4].keys(), arr[it + 4].values(), linestyle='solid', label='Выполнено')
+        plot.legend()
+        plot.set_title(name)
+        plot.grid(True)
+        return plot
 
 
 class Window(QtWidgets.QMainWindow):
@@ -36,11 +53,13 @@ class Window(QtWidgets.QMainWindow):
         self.layout = QtWidgets.QVBoxLayout(self)
         self.button = QtWidgets.QPushButton("Старт")
         self.text1 = QtWidgets.QLabel("Введите адрес файла формата xlsx")
-        self.text2 = QtWidgets.QLabel("Введите адрес имя листа")
+        self.text2 = QtWidgets.QLabel("Введите имя листа")
         self.input_1 = QtWidgets.QLineEdit()
         self.input_1.setMaximumWidth(250)
+        self.input_1.setText("1.xlsx")
         self.input_2 = QtWidgets.QLineEdit()
         self.input_2.setMaximumWidth(250)
+        self.input_2.setText("TDSheet")
         self.button.setMaximumWidth(50)
 
         self.layout.addWidget(self.text1)
@@ -63,8 +82,6 @@ class Window(QtWidgets.QMainWindow):
             a = Analytics.PlotRequestsByTime(parser.requests)
             b = a.get()
             self.widget1 = MyWidget(b)
-            # self.widget1.setFixedHeight(150)
-            # self.widget1.setFixedWidth(400)
             self.widget1.setWindowTitle("Аналитика сервиса")
             self.hide()
             self.widget1.show()

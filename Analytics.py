@@ -3,7 +3,7 @@ from datetime import timedelta
 
 
 def __sunday__(to_sunday):
-    return to_sunday + timedelta(6 - to_sunday.weekday(), 0, 0, 0, 0, 0, 0)
+    return (to_sunday + timedelta(6 - to_sunday.weekday(), 0, 0, 0, 0, 0, 0)).date()
 
 
 def __time_iter__(date, type_period):
@@ -78,7 +78,7 @@ class PlotRequestsByTime(object):
                     self.done_requests_by_weeks[__sunday__(i.get()[1].date())] += 1
 
     def __init_dict(self):
-        pointer = __sunday__(datetime(datetime.today().year, 1, 1)).date()
+        pointer = __sunday__(datetime(datetime.today().year, 1, 1))
         while pointer.year == datetime.today().year:
             self.done_requests_by_weeks[pointer] = 0
             pointer = __time_iter__(pointer, 'week')
@@ -158,11 +158,12 @@ class PieTypesRequests(object):
         self.types_month = {}
 
         for i in self.array.values():
-            if i.get()[3] != "Заказ выполнен" and i.get()[3] != 'Заказ выполнен.':
+            if i.get()[5] != 'Закрыто':
                 if self.types_total.get(i.get()[3]) is None:
                     self.types_total[i.get()[3]] = 1
                 else:
                     self.types_total[i.get()[3]] += 1
+
 
     def get(self):
         return self.types_total
@@ -179,9 +180,9 @@ class FindWarrantyNearToEnd(object):
 
 class FindDelayProvider(object):
     def __init__(self, array):
-        output_file = open('GH', 'w')
+        output_file = open('ПросрочкаПоставщика.txt', 'w')
         for i in array.values():
-            if i.get()[4] != 'Гарантия' and i.get()[3] == 'Заказы запчасти' \
+            if i.get()[4] != 'Гарантия' and i.get()[3] == 'Заказаны запчасти' \
                     and datetime.today() - i.get()[0] >= timedelta(180, 0, 0, 0, 0):
                 output_file.write(i.get()[2] + '\n')
 
@@ -238,3 +239,37 @@ class ClientsCounter(object):
 
     def get(self):
         return len(self.clients)
+
+
+class PlotNotDoneRequests(object):
+    def __init_dict(self):
+        pointer = __sunday__(datetime(datetime.today().year, 1, 1))
+        while pointer.year == datetime.today().year:
+            self.requests[pointer] = 0
+            pointer = __time_iter__(pointer, 'week')
+
+    def __init__(self, array):
+        cur_year = datetime.today().year
+        self.requests = {}
+        self.__init_dict()
+        for i in array.values():
+            if i.get()[0].year == cur_year and i.get()[5] == 'Закрыто':
+                pointer = __sunday__(i.get()[0])
+                while pointer < i.get()[1].date():
+                    self.requests[pointer] += 1
+                    pointer = __time_iter__(pointer, 'week')
+            elif i.get()[0].year == cur_year and i.get()[5] != 'Закрыто':
+                pointer = __sunday__(i.get()[0])
+                while pointer < datetime.today().date():
+                    self.requests[pointer] += 1
+                    pointer = __time_iter__(pointer, 'week')
+
+    def get(self):
+        return self.requests
+
+#
+# class FindRepeats(object):
+#     def __init__(self, data):
+#
+#         for i in data.values():
+#

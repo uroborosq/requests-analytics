@@ -7,39 +7,46 @@ months = ["Январь", "Февраль", "Март", "Апрель", "Май"
           "Ноябрь", "Декабрь"]
 
 
-class PlotReceivedRequestsThreeYears(object):
-    def __init__(self, arr):
-        fig, axes = plt.subplots(nrows=1, ncols=1)
+class PlotThreeYears(object):
+    def __init__(self, data, wait):
+        fig, axes = plt.subplots(nrows=2, ncols=1, num='Поступившие заявки. Сранение текущего года с 2-мя предыдущими')
         stop = 12
-        for i in reversed(arr[0].keys()):
-            if arr[0][i] != 0:
+        for i in reversed(data[0].keys()):
+            if data[0][i] != 0:
                 stop = i.month - 1
                 break
-            print(arr[0][i])
+            print(data[0][i])
 
-        axes.plot(months[:stop], list(arr[0].values())[:stop], linestyle='solid', label=str(arr[3]), marker="o")
-        axes.plot(months, arr[1].values(), linestyle='solid', label=str(arr[3] - 1), marker="o")
-        axes.plot(months, arr[2].values(), linestyle='solid', label=str(arr[3] - 2), marker="o")
-        axes.set_ylabel('Количество поступивших, шт')
-        axes.set_xlabel('Время, месяцы')
-        axes.set_title("Поступившие заявки. Сравнение текущего года с 2-мя предыдущими")
-        axes.legend()
-        axes.grid(True)
+        axes[0].plot(months[:stop], list(data[0].values())[:stop], linestyle='solid', label=str(data[3]), marker="o")
+        axes[0].plot(months, data[1].values(), linestyle='solid', label=str(data[3] - 1), marker="o")
+        axes[0].plot(months, data[2].values(), linestyle='solid', label=str(data[3] - 2), marker="o")
+        axes[0].set_ylabel('Количество поступивших, шт')
+        axes[0].set_xlabel('Время, месяцы')
+        axes[0].set_title("Поступившие заявки. Сравнение текущего года с 2-мя предыдущими")
+        axes[0].legend()
+        axes[0].grid(True)
+        axes[1].plot(wait.keys(), wait.values())
+        axes[1].grid(True)
+        axes[1].set_title('Количество незакрытых заявок')
+        plt.show()
 
         plt.show()
 
 
-class PieTypesRequests(object):
+class PiePhases(object):
     def __init__(self, arr):
-        fig, axes = plt.subplots(nrows=1, ncols=2)
+        fig, axes = plt.subplots(nrows=1, ncols=2, num='Фазы незакрытых заявок')
 
         labels = list(arr.keys())
 
         for i in range(len(labels)):
-            labels[i] = labels[i] + ": " + str(arr[labels[i]]) + " шт"
-        print(labels)
+            labels[i] = labels[i] + ": " + str(arr[labels[i]]) + " шт" + '(' + \
+                        str("%.1f" % (arr[labels[i]] / sum(arr.values()) * 100)) + '%)'
+        explode = []
+        for i in arr.values():
+            explode.append(0.0025 / (i / sum(arr.values())))
 
-        wedges = axes[0].pie(arr.values(), labels=list(labels), autopct='%1.1f%%', explode=[0.01] * len(arr))
+        wedges = axes[0].pie(arr.values(), labels=list(labels), explode=explode)
  
         axes[0].axis('equal')
         axes[1].axis('off')
@@ -51,7 +58,7 @@ class PieTypesRequests(object):
 
 class PlotAverageTime(object):
     def __init__(self, array):
-        fig, axes = plt.subplots(nrows=1, ncols=1)
+        fig, axes = plt.subplots(nrows=1, ncols=1, num='Скорость закрытия заявок')
 
         axes.plot(months[:len(array[0])], array[0].values(), linestyle='solid', marker='o')
         axes.set_title('Скорость закрытия заявок')
@@ -64,49 +71,52 @@ class PlotAverageTime(object):
         plt.show()
 
 
-class PieTypesClients(object):
+class PieTypes(object):
     def __init__(self, arr):
-        fig, axes = plt.subplots(nrows=1, ncols=2)
+        fig, axes = plt.subplots(nrows=1, ncols=2, num="Распределение заявок по типам в "
+                                                       + str(datetime.datetime.today().year) + "году")
 
         labels = list(arr.keys())
-        print(labels)
-        for i in range(len(labels)):
-            labels[i] = labels[i] + ". Кол-во: " + str(arr[labels[i]])
 
-        wedges = axes[0].pie(arr.values(), labels=list(arr.keys()), autopct='%1.1f%%', explode=[0.01] * len(arr))
+        for i in range(len(labels)):
+            labels[i] = labels[i] + ": " + str(arr[labels[i]]) + " шт" + '(' + \
+                        str("%.1f" % (arr[labels[i]] / sum(arr.values()) * 100)) + '%)'
+        explode = []
+        for i in arr.values():
+            explode.append(0.000025 / (i / sum(arr.values())))
+
+        wedges = axes[0].pie(arr.values(), labels=labels, explode=explode)
 
         axes[0].axis('equal')
         axes[1].axis('off')
-        axes[1].legend(wedges[0], labels, loc="center", title="Типы заявок по гарантии. Всего заявок: "
-                                                              + str(sum(arr.values())))
+        axes[1].legend(wedges[0], labels, loc="upper right", title="Типы заявок")
 
-        fig.suptitle("Распределение заявок по типам в" + str(datetime.datetime.today().year) + "году")
+        fig.suptitle("Распределение заявок по типам в " + str(datetime.datetime.today().year) + "году")
         plt.show()
 
 
 class PieManagers(object):
-    def __init__(self, arr):
-        fig, axes = plt.subplots(nrows=1, ncols=2)
+    def __init__(self, data):
+        fig, axes = plt.subplots(nrows=1, ncols=2, num='Распределение нагрузки на менеджеров')
+        labels = list(data.keys())
 
-        labels = list(arr.keys())
-        print(labels)
         for i in range(len(labels)):
-            labels[i] = labels[i] + ". Кол-во: " + str(arr[labels[i]])
+            labels[i] = labels[i] + ": " + str(data[labels[i]]) + " шт" + '(' + \
+                        str("%.1f" % (data[labels[i]] / sum(data.values()) * 100)) + '%)'
 
-        wedges = axes[0].pie(arr.values(), labels=list(arr.keys()), autopct='%1.1f%%', explode=[0.01] * len(arr))
+        wedges = axes[0].pie(data.values(), labels=labels)
 
         axes[0].axis('equal')
         axes[1].axis('off')
-        axes[1].legend(wedges[0], labels, loc="center", title="Список менеджеров. Всего заявок: "
-                                                              + str(sum(arr.values())))
+        axes[1].legend(wedges[0], data.keys(), loc="upper right", title="Список менеджеров")
 
-        fig.suptitle("Вклад каждого менеджера")
+        fig.suptitle("Распределение нагрузки на менеджеров. Всего заявок: " + str(sum(data.values())))
         plt.show()
 
 
 class PlotDoneRequests(object):
     def __init__(self, array):
-        fig, axes = plt.subplots(nrows=1, ncols=1)
+        fig, axes = plt.subplots(nrows=1, ncols=1, num='Динамика закрытия заявок')
 
         axes.plot(array[1].keys(), array[1].values(), linestyle='solid', marker='o')
         axes.grid(True)

@@ -198,7 +198,6 @@ class Window(QtWidgets.QMainWindow):
         self.show()
 
     def get_text(self):
-        self.
         self.label_parser.setText("Считывание данных...")
         if self.input_1.text() != '' and self.input_2.text() != '':
             try:

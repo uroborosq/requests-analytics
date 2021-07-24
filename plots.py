@@ -15,7 +15,6 @@ class PlotThreeYears(object):
             if data[0][i] != 0:
                 stop = i.month - 1
                 break
-            print(data[0][i])
 
         axes[0].plot(months[:stop], list(data[0].values())[:stop], linestyle='solid', label=str(data[3]), marker="o")
         axes[0].plot(months, data[1].values(), linestyle='solid', label=str(data[3] - 1), marker="o")
@@ -25,11 +24,18 @@ class PlotThreeYears(object):
         axes[0].set_title("Поступившие заявки. Сравнение текущего года с 2-мя предыдущими")
         axes[0].legend()
         axes[0].grid(True)
-        axes[1].plot(wait.keys(), wait.values())
-        axes[1].grid(True)
-        axes[1].set_title('Количество незакрытых заявок')
-        plt.show()
 
+        weeks_to_months = [str(k + 1) for k in range(len(wait))]
+        j = 1
+        axes[1].plot(weeks_to_months, wait.values(), linestyle='solid', marker='o')
+        for i in wait.keys():
+            if i - datetime.date(i.year, i.month, 1) <= datetime.timedelta(7, 0, 0, 0, 0, 0, 0):
+                axes[1].annotate(months[i.month - 1], [str(j), wait[i]])
+            j += 1
+        axes[1].minorticks_on()
+        axes[1].grid(True)
+
+        axes[1].set_title('Количество незакрытых заявок')
         plt.show()
 
 

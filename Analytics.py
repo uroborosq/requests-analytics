@@ -1,5 +1,6 @@
 from datetime import datetime
 from datetime import timedelta
+import Request
 
 
 def __sunday__(to_sunday):
@@ -56,11 +57,11 @@ class DoneRequests(object):
         self.__init_dict()
 
         for i in self.array.values():
-            if i.get()[1] is not None and i.get()[5] == "Закрыто" and i.get()[1].year == datetime.today().year:
-                if self.done_requests_by_weeks.get(__sunday__(i.get()[1].date())) is None:
-                    self.done_requests_by_weeks[__sunday__(i.get()[1].date())] = 1
+            if i.date_end != '' and i.status == "Закрыто" and i.date_end.year == datetime.today().year:
+                if self.done_requests_by_weeks.get(__sunday__(i.date_end.date())) is None:
+                    self.done_requests_by_weeks[__sunday__(i.date_end.date())] = 1
                 else:
-                    self.done_requests_by_weeks[__sunday__(i.get()[1].date())] += 1
+                    self.done_requests_by_weeks[__sunday__(i.date_end.date())] += 1
 
     def __init_dict(self):
         pointer = __sunday__(datetime(datetime.today().year, 1, 1)).date()
@@ -82,17 +83,16 @@ class AllRequestsThreeYears(object):
         __init_dict__(self.year0, self.current_year)
         __init_dict__(self.year1, self.current_year - 1)
         __init_dict__(self.year2, self.current_year - 2)
-        print(self.year2)
 
         for i in array.values():
-            if i.get()[0].year == self.current_year and i.get()[0].month != datetime.today().month:
-                self.year0[datetime(i.get()[0].year, i.get()[0].month, 1)] += 1
+            if i.date_begin.year == self.current_year:
+                self.year0[datetime(i.date_begin.year, i.date_begin.month, 1)] += 1
 
-            elif i.get()[0].year == self.current_year - 1:
-                self.year1[datetime(i.get()[0].year, i.get()[0].month, 1)] += 1
+            elif i.date_begin.year == self.current_year - 1:
+                self.year1[datetime(i.date_begin.year, i.date_begin.month, 1)] += 1
 
-            elif i.get()[0].year == self.current_year - 2:
-                self.year2[datetime(i.get()[0].year, i.get()[0].month, 1)] += 1
+            elif i.date_begin.year == self.current_year - 2:
+                self.year2[datetime(i.date_begin.year, i.date_begin.month, 1)] += 1
 
     def get(self):
         return [self.year0, self.year1, self.year2, self.current_year]
@@ -106,10 +106,10 @@ class AverageTime(object):
             self.year[datetime(datetime.today().year, i + 1, 1)] = []
 
         for i in self.array.values():
-            if i.get()[1] != '':
-                if str(i.get()[5]).find('Закрыто') != -1 and i.get()[1].year == datetime.today().year \
-                        and i.get()[1].month != datetime.today().month:
-                    self.year[datetime(i.get()[1].year, i.get()[1].month, 1)].append(abs(i.get()[1] - i.get()[0]))
+            if i.date_end != '':
+                if str(i.status).find('Закрыто') != -1 and i.date_end.year == datetime.today().year \
+                        and i.date_end.month != datetime.today().month:
+                    self.year[datetime(i.date_end.year, i.date_end.month, 1)].append(abs(i.date_end - i.date_begin))
 
         self.months_time = {}
         self.months_number = {}
@@ -132,11 +132,11 @@ class Phases(object):
         types_total = {}
 
         for i in data.values():
-            if i.get()[5] != 'Закрыто':
-                if types_total.get(i.get()[3]) is None:
-                    types_total[i.get()[3]] = 1
+            if i.status != 'Закрыто':
+                if types_total.get(i.phase) is None:
+                    types_total[i.phase] = 1
                 else:
-                    types_total[i.get()[3]] += 1
+                    types_total[i.phase] += 1
 
         self.sorted_dict = {}
         sorted_keys = reversed(sorted(types_total, key=types_total.get))
@@ -148,45 +148,66 @@ class Phases(object):
 
 
 class Warranty(object):
-    def __init__(self, array, **kwargs):
-        output_file = open('ГарантияИстекаетСрок' + str(datetime.today()) + '.txt', 'w')
+    def __init__(self, array):
+        output_file = open('ГарантияИстекаетСрок' + str(datetime.today().strftime('%d-%m-%Y-%H-%M')) + '.txt', 'w')
+        self.types = {}
+        for i in array.values():
+            if i.warranty == 'Гарантия' and i.status != 'Закрыто':
+                if timedelta(45, 0, 0, 0, 0) >= datetime.today() - i.date_begin >= timedelta(31, 0, 0, 0, 0):
+                    output_file.write(i.id + ' - ' + str((datetime.today() - i.date_begin)) + '\n')
+                    if self.types.get('31-45 дней') is not None:
+                        self.types['31-45 дней'] += 1
+                    else:
+                        self.types['31-45 дней'] = 1
+                elif timedelta(30, 0, 0, 0, 0) >= datetime.today() - i.date_begin >= timedelta(16, 0, 0, 0, 0):
+                    output_file.write(i.id + ' - ' + str((datetime.today() - i.date_begin)) + '\n')
+                    if self.types.get('16-30 дней') is not None:
+                        self.types['16-30 дней'] += 1
+                    else:
+                        self.types['16-30 дней'] = 1
+                elif timedelta(15, 0, 0, 0, 0) >= datetime.today() - i.date_begin >= timedelta(6, 0, 0, 0, 0):
+                    output_file.write(i.id + ' - ' + str((datetime.today() - i.date_begin)) + '\n')
+                    if self.types.get('6-15 дней') is not None:
+                        self.types['6-15 дней'] += 1
+                    else:
+                        self.types['6-15 дней'] = 1
+                elif timedelta(5, 0, 0, 0, 0) >= abs(datetime.today() - i.date_begin) >= timedelta(0, 0, 0, 0, 0):
+                    output_file.write(i.id + ' - ' + str((datetime.today() - i.date_begin)) + '\n')
+                    if self.types.get('0-5 дней') is not None:
+                        self.types['0-5 дней'] += 1
+                    else:
+                        self.types['0-5 дней'] = 1
+                else:
+                    output_file.write(i.id + ' - ' + str((datetime.today() - i.date_begin)) + '\n')
+                    if self.types.get('45+ дней') is not None:
+                        self.types['45+ дней'] += 1
+                    else:
+                        self.types['45+ дней'] = 1
 
-        if kwargs.get('first') is not None and kwargs.get('second') is not None:
-            for i in array.values():
-                if i.get()[4] == 'Гарантия' and i.get()[5] != 'Закрыто' \
-                        and timedelta(eval(kwargs['second']), 0, 0, 0, 0) >= datetime.today() - i.get()[0]\
-                        >= timedelta(eval(kwargs['first']), 0, 0, 0, 0):
-                    output_file.write(i.get()[2] + ' - ' + str((datetime.today() - i.get()[0])) + '\n')
-        elif kwargs.get('begin') is not None and kwargs.get('end') is not None:
-            for i in array.values():
-                if i.get()[4] == 'Гарантия' and i.get()[5] != 'Закрыто' \
-                        and datetime.strptime(kwargs['end'], '%d.%m.%Y') >= i.get()[0] \
-                        >= datetime.strptime(kwargs['begin'], '%d.%m.%Y'):
-                    output_file.write(i.get()[2] + ' - ' + str((datetime.today() - i.get()[0])) + ' '
-                                      + str(i.get()[0]) + '\n')
-        else:
-            raise KeyError('Некорректные данные')
+    def get(self):
+        return self.types
 
 
 class DelayProvider(object):
     def __init__(self, array):
         output_file = open('ПросрочкаПоставщика.txt', 'w')
         for i in array.values():
-            if i.get()[4] != 'Гарантия' and i.get()[3] == 'Заказаны запчасти' \
-                    and datetime.today() - i.get()[0] >= timedelta(180, 0, 0, 0, 0):
-                output_file.write(i.get()[2] + ' - ' + str((datetime.today() - i.get()[0]).days) + 'дней\n')
+            if i.warranty != 'Гарантия' and i.phase == 'Заказаны запчасти' \
+                    and datetime.today() - i.date_begin >= timedelta(180, 0, 0, 0, 0):
+                output_file.write(i.id + ' - ' + str((datetime.today() - i.date_begin).days) + 'дней\n')
 
 
 class Types(object):
-    def __init__(self, array):
+    def __init__(self, array, begin, end):
         types = {}
 
         for i in array.values():
-            tmp = i.get()[4] if i.get()[4] is not None else 'Не указано'
-            if types.get(tmp) is None:
-                types[tmp] = 1
-            else:
-                types[tmp] += 1
+            if end >= i.date_begin.date() >= begin:
+                tmp = i.warranty if i.warranty is not None else 'Не указано'
+                if types.get(tmp) is None:
+                    types[tmp] = 1
+                else:
+                    types[tmp] += 1
 
         self.sorted_dict = {}
         self.final = {}
@@ -214,14 +235,14 @@ class Managers(object):
             date_end = datetime.max.date()
 
         for i in array.values():
-            if date_end >= i.get()[0].date() >= date_begin:
+            if date_end >= i.date_begin.date() >= date_begin:
                 tmp = 'Ошибки заполнения'
-                if i.get()[6] is not None and is_full:
+                if i.manager is not None and is_full:
                     for j in names.split(','):
-                        if i.get()[6].find(j) != -1:
+                        if i.manager.find(j) != -1:
                             tmp = j
-                elif i.get()[6] is not None:
-                    tmp = i.get()[6]
+                elif i.manager is not None:
+                    tmp = i.manager
 
                 if self.managers.get(tmp) is None:
                     self.managers[tmp] = 1
@@ -244,12 +265,12 @@ class ClientsCounter(object):
         self.clients = {}
 
         for i in array.values():
-            if i.get()[0] > datetime(datetime.today().year, 1, 1):
-                if i.get()[7] is None:
+            if i.date_begin > datetime(datetime.today().year, 1, 1):
+                if i.client is None:
                     print(0)
                     self.clients['Клиент не указан'] = 1
                 else:
-                    self.clients[i.get()[7]] = 1
+                    self.clients[i.client] = 1
 
     def get(self):
         return len(self.clients)
@@ -267,16 +288,44 @@ class WaitingRequests(object):
         self.requests = {}
         self.__init_dict()
         for i in array.values():
-            if i.get()[0].year == cur_year and i.get()[5] == 'Закрыто':
-                pointer = __sunday__(i.get()[0]).date()
-                while pointer < i.get()[1].date():
+            if i.date_begin.year == cur_year and i.status == 'Закрыто'\
+                    and i.date_end != '':
+                pointer = __sunday__(i.date_begin).date()
+                while pointer < i.date_end.date():
                     self.requests[pointer] += 1
                     pointer = __time_iter__(pointer, 'week')
-            elif i.get()[0].year == cur_year and i.get()[5] != 'Закрыто':
-                pointer = __sunday__(i.get()[0]).date()
+            elif i.date_begin.year == cur_year and i.status != 'Закрыто':
+                pointer = __sunday__(i.date_begin).date()
                 while pointer < datetime.today().date():
                     self.requests[pointer] += 1
                     pointer = __time_iter__(pointer, 'week')
 
     def get(self):
         return self.requests
+
+
+class DaySchedule(object):
+    def __init__(self, data, date):
+        self.engeenires = {}
+        for i in data.values():
+            if i.begin_working != '':
+                if i.begin_working.date() == date.date():
+                    for j in i.engineer:
+                        if self.engeenires.get(j) is None:
+                            self.engeenires[j] = [[i.id, i.warranty]]
+                        else:
+                            self.engeenires[j].append([i.id, i.warranty])
+
+    def get(self):
+        return self.engeenires
+
+# class RequestRepeats(object):
+#     def __init__(self, data):
+#         self.requests = {}
+#         file = open("Повторы.txt", 'w')
+#         for i in data.values():
+#             with [i.model, i.address] as key:
+#                 if self.requests.get(key) is not None:
+#                     pass
+#                 else:
+#                     self.requests[key] = [[i.date_begin]]

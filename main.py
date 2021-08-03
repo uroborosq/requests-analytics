@@ -318,7 +318,7 @@ class SettingsBox(QtWidgets.QGroupBox):
         button_settings = QtWidgets.QPushButton("Настройки парсера")
         layout.addWidget(button_settings)
         layout.addWidget(label_client_counter)
-        label_version = QtWidgets.QLabel("Версия 0.0.3 pre-alpha")
+        label_version = QtWidgets.QLabel("Версия 0.0.1 alpha")
         label_version.setAlignment(Qt.AlignRight)
         button_settings.clicked.connect(self.open_settings)
 

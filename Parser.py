@@ -38,7 +38,7 @@ class Parser(object):
         counter = 0
         lines_to_skip = 6
         if self.settings.get('lines_to_skip') is not None:
-            lines_to_skip = self.settings['lines_to_skip']
+            lines_to_skip = eval(self.settings['lines_to_skip'])
 
         for i in self.sheet:
             if counter < lines_to_skip:

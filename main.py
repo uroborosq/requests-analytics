@@ -175,9 +175,6 @@ class SimplePlots(QtWidgets.QGroupBox):
     def plot_average_time(self):
         plots.PlotAverageTime(Analytics.AverageTime(self.data).get())
 
-    def pie_types(self):
-        plots.PieTypes(Analytics.Types(self.data).get())
-
     def plot_done_requests(self):
         plots.PlotDoneRequests(Analytics.DoneRequests(self.data).get())
 

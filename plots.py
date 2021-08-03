@@ -103,7 +103,7 @@ class PieTypes(object):
         axes[1].legend(wedges[0], labels, loc="upper right", title="Типы заявок. Всего заявок: " +
                                                                    str(sum(list(data.values()))))
 
-        fig.suptitle("Распределение заявок по типам в период с в заданный период")
+        fig.suptitle("Распределение заявок по типам в период в заданный период")
         plt.show()
 
 

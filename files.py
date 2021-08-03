@@ -79,7 +79,7 @@ def return_dict():
             'address': 'P',
             'model': 'K',
             'priority': 'R',
-            'lines_to_skip': 6
+            'lines_to_skip': '6'
     }
 
 

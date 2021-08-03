@@ -36,12 +36,12 @@ class Parser(object):
 
         error_output = open('errors_while_parsing.txt', 'w')
         counter = 0
-        lines_to_skip = 7
+        lines_to_skip = 6
         if self.settings.get('lines_to_skip') is not None:
             lines_to_skip = self.settings['lines_to_skip']
 
         for i in self.sheet:
-            if counter < 7:
+            if counter < lines_to_skip:
                 counter += 1
                 continue
             if self.requests.get(i[1].value) is not None:

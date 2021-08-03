@@ -60,13 +60,13 @@ class ParserSettingsWindow(QtWidgets.QMainWindow):
         super().__init__()
         layout = QtWidgets.QFormLayout()
 
-        self.lines = [QtWidgets.QLineEdit() for i in range(12)]
+        self.lines = [QtWidgets.QLineEdit() for i in range(files.return_number())]
 
         button_set = QtWidgets.QPushButton('Применить настройки')
         button_set.clicked.connect(self.set_custom)
         self.button_set_default = QtWidgets.QPushButton('Установить настройки по умолчанию')
         self.button_set_default.clicked.connect(files.set_default)
-        self.lines[-1].pressedReturn.clicked(self.set_custom)
+        self.lines[-1].returnPressed.connect(self.set_custom)
         with open('.parser_settings.json', 'r') as file:
             settings = json.load(file)
             j = 0
@@ -86,6 +86,8 @@ class ParserSettingsWindow(QtWidgets.QMainWindow):
         layout.addRow(self.tr('&Клиент'), self.lines[9])
         layout.addRow(self.tr('&Адрес'), self.lines[10])
         layout.addRow(self.tr('&Модель'), self.lines[11])
+        layout.addRow(self.tr("&Приоритет"), self.lines[12])
+        layout.addRow(self.tr('&Количество строк в загововке'), self.lines[13])
         layout.addWidget(button_set)
         layout.addWidget(self.button_set_default)
 
@@ -97,19 +99,25 @@ class ParserSettingsWindow(QtWidgets.QMainWindow):
         try:
             if self.__check__():
                 settings = {
-                    'id': self.lines[0].text(),
-                    'date_begin': self.lines[1].text(),
-                    'date_begin_working': self.lines[2].text(),
-                    'date_end': self.lines[3].text(),
-                    'status': self.lines[4].text(),
-                    'manager': self.lines[5].text(),
-                    'type': self.lines[6].text(),
-                    'phase': self.lines[7].text(),
-                    'engineer': self.lines[8].text(),
-                    'client': self.lines[9].text(),
-                    'address': self.lines[11].text(),
-                    'model': self.lines[10].text()
+                    # 'id': self.lines[0].text(),
+                    # 'date_begin': self.lines[1].text(),
+                    # 'date_begin_working': self.lines[2].text(),
+                    # 'date_end': self.lines[3].text(),
+                    # 'status': self.lines[4].text(),
+                    # 'manager': self.lines[5].text(),
+                    # 'type': self.lines[6].text(),
+                    # 'phase': self.lines[7].text(),
+                    # 'engineer': self.lines[8].text(),
+                    # 'client': self.lines[9].text(),
+                    # 'address': self.lines[11].text(),
+                    # 'model': self.lines[10].text()
+                    # 'priority'
                 }
+                with 0 as j:
+                    for i in files.set_default():
+                        settings[i] = self.lines[j].text()
+                        j += 1
+
                 file = open('.parser_settings.json', 'w')
                 json.dump(settings, file, indent=4)
                 file.close()

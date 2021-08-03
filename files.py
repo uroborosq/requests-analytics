@@ -64,9 +64,8 @@ class DaySchedule(object):
         return 'DaySchedule' + str(self.date.strftime('%d-%m-%Y')) + '.xlsx'
 
 
-def set_default():
-    file = open('.parser_settings.json', 'w')
-    settings = {
+def return_dict():
+    return {
             'id': 'B',
             'date_begin': 'E',
             'date_begin_working': 'F',
@@ -78,7 +77,19 @@ def set_default():
             'engineer': 'N',
             'client': 'O',
             'address': 'P',
-            'model': 'K'
+            'model': 'K',
+            'priority': 'R',
+            'lines_to_skip': '7'
     }
+
+
+def set_default():
+    file = open('.parser_settings.json', 'w')
+    settings = return_dict()
     json.dump(settings, file, indent=4)
     file.close()
+    return settings
+
+
+def return_number():
+    return len(return_dict())

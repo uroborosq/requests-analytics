@@ -85,8 +85,7 @@ class PlotAverageTime(object):
 class PieTypes(object):
     def __init__(self, data):
         fig, axes = plt.subplots(nrows=1, ncols=2, num="Распределение заявок по типам в "
-                                                       + str(
-            datetime.datetime.today().year) + " году. " + "Отчет сформирован " + str(datetime.datetime.today().date()))
+        + str(datetime.datetime.today().year) + " году. " + "Отчет сформирован " + str(datetime.datetime.today().date()))
 
         labels = list(data.keys())
 
@@ -104,7 +103,7 @@ class PieTypes(object):
         axes[1].legend(wedges[0], labels, loc="upper right", title="Типы заявок. Всего заявок: " +
                                                                    str(sum(list(data.values()))))
 
-        fig.suptitle("Распределение заявок по типам в " + str(datetime.datetime.today().year) + "году")
+        fig.suptitle("Распределение заявок по типам в период с в заданный период")
         plt.show()
 
 
@@ -167,5 +166,16 @@ class WarrantyPie(object):
         axes[1].legend(wedges[0], labels, loc="upper right", title="Периоды")
 
         fig.suptitle("Распределение незакрытых гарантийных заявок в " + str(datetime.datetime.today().year) + " году"
-                     '. Всего заявок: ' + str(sum(data.values())))
+                                                                                                              '. Всего заявок: ' + str(
+            sum(data.values())))
         plt.show()
+
+
+class DoneWaitReceive(object):
+    def __init__(self, data):
+        fig, axes = plt.subplots(nrows=1, ncols=1, num='Соотношение поступивших, незакрытых и закрытых заявок в ' +
+                                                       str(datetime.datetime.today().year) + ' году')
+
+        axes.plot(data[0].keys(), data[1].values())
+        axes.plot(data[1].keys(), data[1].values())
+        axes.plot(data[2].keys(), data[2].values())

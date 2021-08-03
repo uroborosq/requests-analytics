@@ -216,7 +216,7 @@ class Types(object):
             self.sorted_dict[sorted_keys[i]] = types[sorted_keys[i]]
             self.sorted_dict[sorted_keys[- i - 1]] = types[sorted_keys[- i - 1]]
         if len(self.sorted_dict) < len(sorted_keys):
-            self.sorted_dict[sorted_keys[len(types) // 2 + 1]] = types[sorted_keys[len(types) // 2 + 1]]
+            self.sorted_dict[sorted_keys[len(types) // 2]] = types[sorted_keys[len(types) // 2]]
 
     def get(self):
         return self.sorted_dict
@@ -319,13 +319,14 @@ class DaySchedule(object):
     def get(self):
         return self.engeenires
 
-# class RequestRepeats(object):
-#     def __init__(self, data):
-#         self.requests = {}
-#         file = open("Повторы.txt", 'w')
-#         for i in data.values():
-#             with [i.model, i.address] as key:
-#                 if self.requests.get(key) is not None:
-#                     pass
-#                 else:
-#                     self.requests[key] = [[i.date_begin]]
+
+class RequestRepeats(object):
+    def __init__(self, data):
+        self.requests = {}
+        file = open("Повторы.txt", 'w')
+        for i in data.values():
+            with [i.model, i.address] as key:
+                if self.requests.get(key) is not None:
+                    pass
+                else:
+                    self.requests[key] = [[i.date_begin]]

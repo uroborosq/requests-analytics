@@ -1,6 +1,6 @@
 from datetime import datetime
 import json
-import openpyxl as xl
+from openpyxl import load_workbook
 
 import files
 from Request import Request
@@ -20,7 +20,7 @@ class Parser(object):
     engineers = {}
 
     def __init__(self, path_, sheet_):
-        self.file = xl.load_workbook(filename=path_)
+        self.file = load_workbook(filename=path_, read_only=True)
         self.sheet = self.file[sheet_]
         self.settings = {}
 

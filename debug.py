@@ -3,7 +3,7 @@ import plots
 from Parser import Parser
 import datetime
 import files
-parser = Parser("3.xlsx", "TDSheet")
+parser = Parser("5.xlsx", "TDSheet")
 parser.parse()
 
 # b = Analytics.PlotRequestsByTime(parser.requests)
@@ -55,4 +55,10 @@ parser.parse()
 
 # диаграмма про периоды незакрытых гаранийных заявок
 
-plots.WarrantyPie(Analytics.Warranty(parser.requests).get())
+#plots.WarrantyPie(Analytics.Warranty(parser.requests).get())
+
+plots.DoneWaitReceive(
+    [Analytics.Received(parser.requests).get()[0],
+     Analytics.Waiting(parser.requests).get(),
+     Analytics.Done(parser.requests).get()]
+                      )

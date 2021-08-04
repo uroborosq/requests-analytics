@@ -2,7 +2,8 @@ import datetime
 import json
 import sys
 
-from PyQt5 import QtWidgets
+from PyQt5.QtWidgets import QMainWindow, QWidget, QLabel, QLineEdit, QPushButton, QGridLayout, QVBoxLayout, \
+    QFormLayout, QApplication, QMessageBox, QGroupBox
 from PyQt5.QtCore import Qt
 from openpyxl.utils import exceptions
 
@@ -18,18 +19,18 @@ def json_dump():
     file.close()
 
 
-class DayScheduleWindow(QtWidgets.QMainWindow):
+class DayScheduleWindow(QMainWindow):
     def __init__(self, arr):
         super().__init__()
         self.data = arr
-        self.layout = QtWidgets.QGridLayout()
-        button_create_form = QtWidgets.QPushButton("Сгенерировать форму")
-        label_info = QtWidgets.QLabel("Введите дату в формате Д.М.Г(21.04.2019)")
-        self.line_date = QtWidgets.QLineEdit()
+        self.layout = QGridLayout()
+        button_create_form = QPushButton("Сгенерировать форму")
+        label_info = QLabel("Введите дату в формате Д.М.Г(21.04.2019)")
+        self.line_date = QLineEdit()
         if autocomplete.get('day_schedule_date') is not None:
             self.line_date.setText(autocomplete['day_schedule_date'])
 
-        self.label_result = QtWidgets.QLabel('')
+        self.label_result = QLabel('')
         button_create_form.clicked.connect(self.create_form)
         self.line_date.returnPressed.connect(self.create_form)
 
@@ -38,7 +39,7 @@ class DayScheduleWindow(QtWidgets.QMainWindow):
         self.layout.addWidget(button_create_form)
         self.layout.addWidget(self.label_result)
 
-        self.wnd = QtWidgets.QWidget()
+        self.wnd = QWidget()
         self.wnd.setLayout(self.layout)
         self.setCentralWidget(self.wnd)
 
@@ -50,21 +51,21 @@ class DayScheduleWindow(QtWidgets.QMainWindow):
             output_file = files.DaySchedule(Analytics.DaySchedule(self.data, date).get(), date).get()
             self.label_result.setText('Форма сохранена в файл\n' + output_file)
         except ValueError:
-            QtWidgets.QMessageBox(text='Неверные данные').exec()
+            QMessageBox(text='Неверные данные').exec()
         except KeyError:
-            QtWidgets.QMessageBox(text='KeyError').exec()
+            QMessageBox(text='KeyError').exec()
 
 
-class ParserSettingsWindow(QtWidgets.QMainWindow):
+class ParserSettingsWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        layout = QtWidgets.QFormLayout()
+        layout = QFormLayout()
 
-        self.lines = [QtWidgets.QLineEdit() for i in range(files.return_number())]
+        self.lines = [QLineEdit() for _ in range(files.return_number())]
 
-        button_set = QtWidgets.QPushButton('Применить настройки')
+        button_set = QPushButton('Применить настройки')
         button_set.clicked.connect(self.set_custom)
-        self.button_set_default = QtWidgets.QPushButton('Установить настройки по умолчанию')
+        self.button_set_default = QPushButton('Установить настройки по умолчанию')
         self.button_set_default.clicked.connect(files.set_default)
         self.lines[-1].returnPressed.connect(self.set_custom)
         with open('.parser_settings.json', 'r') as file:
@@ -91,74 +92,63 @@ class ParserSettingsWindow(QtWidgets.QMainWindow):
         layout.addWidget(button_set)
         layout.addWidget(self.button_set_default)
 
-        self.wnd = QtWidgets.QWidget()
+        self.wnd = QWidget()
         self.wnd.setLayout(layout)
         self.setCentralWidget(self.wnd)
 
     def set_custom(self):
         try:
             if self.__check__():
-                settings = {
-                    # 'id': self.lines[0].text(),
-                    # 'date_begin': self.lines[1].text(),
-                    # 'date_begin_working': self.lines[2].text(),
-                    # 'date_end': self.lines[3].text(),
-                    # 'status': self.lines[4].text(),
-                    # 'manager': self.lines[5].text(),
-                    # 'type': self.lines[6].text(),
-                    # 'phase': self.lines[7].text(),
-                    # 'engineer': self.lines[8].text(),
-                    # 'client': self.lines[9].text(),
-                    # 'address': self.lines[11].text(),
-                    # 'model': self.lines[10].text()
-                    # 'priority'
-                }
-                with 0 as j:
-                    for i in files.set_default():
-                        settings[i] = self.lines[j].text()
-                        j += 1
+                settings = {}
+                j = 0
+                for i in files.set_default():
+                    settings[i] = self.lines[j].text()
+                    j += 1
 
                 file = open('.parser_settings.json', 'w')
                 json.dump(settings, file, indent=4)
                 file.close()
         except ValueError:
-            QtWidgets.QMessageBox(text='Неверные данные').exec()
+            QMessageBox(text='Неверные данные').exec()
         except KeyError:
-            QtWidgets.QMessageBox(text='KeyError').exec()
+            QMessageBox(text='KeyError').exec()
 
     def __check__(self):
-        for i in self.lines:
+        for i in self.lines[:1]:
             for j in i.text():
                 if not ('A' <= j <= 'Z'):
-                    return False
-        return True
+                    raise ValueError
+
+        if self.lines[-1].text().isdigit():
+            return True
+        raise ValueError
 
 
-class SimplePlots(QtWidgets.QGroupBox):
+class SimplePlots(QGroupBox):
     def __init__(self, data):
         super().__init__('Аналитика без параметров')
         self.data = dict(data)
-        button_plot_three_years = QtWidgets.QPushButton("График про три года")
-        button_pie_phases = QtWidgets.QPushButton("Диаграмма про фазы")
-        button_average_time = QtWidgets.QPushButton("График про среднее время")
-        button_done_requests = QtWidgets.QPushButton("График про закрытые заявки")
-        button_provider_delay = QtWidgets.QPushButton('Вывести в файл просрочки поставщика')
-        button_day_schedule = QtWidgets.QPushButton("Форма для дневного отчета")
-        button_warranty = QtWidgets.QPushButton("Диаграмма про гарантию и вывод в файл")
+        button_plot_three_years = QPushButton("График про три года")
+        button_pie_phases = QPushButton("Диаграмма про фазы")
+        button_average_time = QPushButton("График про среднее время")
+        button_waitdonerecieve = QPushButton('Поступившие, закрытые и незакрытые заявки')
+        button_provider_delay = QPushButton('Вывести в файл просрочки поставщика')
+        button_day_schedule = QPushButton("Форма для дневного отчета")
+        button_warranty = QPushButton("Диаграмма про гарантию и вывод в файл")
 
         button_plot_three_years.clicked.connect(self.plot_three_years)
         button_warranty.clicked.connect(self.warranty)
         button_pie_phases.clicked.connect(self.pie_phases)
         button_average_time.clicked.connect(self.plot_average_time)
-        button_done_requests.clicked.connect(self.plot_done_requests)
+        button_waitdonerecieve.clicked.connect(self.plot_donewaitrecieve)
         button_provider_delay.clicked.connect(self.find_provider_delay)
         button_day_schedule.clicked.connect(self.day_schedule)
 
-        layout = QtWidgets.QVBoxLayout()
+        layout = QVBoxLayout()
         layout.addWidget(button_plot_three_years)
         layout.addWidget(button_pie_phases)
         layout.addWidget(button_average_time)
-        layout.addWidget(button_done_requests)
+        layout.addWidget(button_waitdonerecieve)
         layout.addWidget(button_provider_delay)
         layout.addWidget(button_day_schedule)
         layout.addWidget(button_warranty)
@@ -167,7 +157,11 @@ class SimplePlots(QtWidgets.QGroupBox):
         self.w = 0
 
     def plot_three_years(self):
-        plots.PlotThreeYears(Analytics.AllRequestsThreeYears(self.data).get())
+        plots.PlotThreeYears([
+            Analytics.Received(self.data, datetime.datetime.today().year, 'month').get(),
+            Analytics.Received(self.data, datetime.datetime.today().year - 1, 'month').get(),
+            Analytics.Received(self.data, datetime.datetime.today().year - 2, 'month').get()
+        ])
 
     def pie_phases(self):
         plots.PiePhases(Analytics.Phases(self.data).get())
@@ -175,12 +169,9 @@ class SimplePlots(QtWidgets.QGroupBox):
     def plot_average_time(self):
         plots.PlotAverageTime(Analytics.AverageTime(self.data).get())
 
-    def plot_done_requests(self):
-        plots.PlotDoneRequests(Analytics.DoneRequests(self.data).get())
-
     def find_provider_delay(self):
         Analytics.DelayProvider(self.data)
-        QtWidgets.QMessageBox(text='Записано в файл!').exec()
+        QMessageBox(text='Записано в файл!').exec()
 
     def day_schedule(self):
         self.w = DayScheduleWindow(self.data)
@@ -190,32 +181,39 @@ class SimplePlots(QtWidgets.QGroupBox):
     def warranty(self):
         plots.WarrantyPie(Analytics.Warranty(self.data).get())
 
+    def plot_donewaitrecieve(self):
+        plots.DoneWaitReceive([
+            Analytics.Received(self.data, datetime.datetime.today().year, 'week').get(),
+            Analytics.Waiting(self.data).get(),
+            Analytics.Done(self.data).get()
+        ])
 
-class ManagersBox(QtWidgets.QGroupBox):
+
+class ManagersBox(QGroupBox):
     def __init__(self, data):
         super(ManagersBox, self).__init__('Распределение нагрузки на инженеров')
         self.data = dict(data)
 
-        layout = QtWidgets.QVBoxLayout()
+        layout = QVBoxLayout()
 
-        label_managers_names = QtWidgets.QLabel('Введите фамилии инженеров в формате Фамилия1,Фамилия2,Фамилия3.\n'
-                                                'Через запятую без пробелов')
-        self.line_managers_name = QtWidgets.QLineEdit()
-        self.line_managers_dates_begin = QtWidgets.QLineEdit()
-        self.line_managers_dates_end = QtWidgets.QLineEdit()
+        label_managers_names = QLabel('Введите фамилии инженеров в формате Фамилия1,Фамилия2,Фамилия3.\n'
+                                      'Через запятую без пробелов')
+        self.line_managers_name = QLineEdit()
+        self.line_managers_dates_begin = QLineEdit()
+        self.line_managers_dates_end = QLineEdit()
         if autocomplete.get('managers_names') is not None:
             self.line_managers_name.setText(autocomplete['managers_names'])
         if autocomplete.get('managers_begin') is not None:
             self.line_managers_dates_begin.setText(autocomplete['managers_begin'])
         if autocomplete.get('managers_end') is not None:
             self.line_managers_dates_end.setText(autocomplete['managers_end'])
-            
-        label_dates_managers = QtWidgets.QLabel('Введите период для аналитики. Если оставить поле пустым,'
-                                                ' то ограничений на период с этой стороны не будет')
-        label_begin = QtWidgets.QLabel('Дата начала периода в формате d.m.Y\nПример: 01.01.2021')
-        label_end = QtWidgets.QLabel('Дата конца периода в формате d.m.Y')
 
-        button_pie_managers = QtWidgets.QPushButton("Диаграмма про менеджеров")
+        label_dates_managers = QLabel('Введите период для аналитики. Если оставить поле пустым,'
+                                      ' то ограничений на период с этой стороны не будет')
+        label_begin = QLabel('Дата начала периода в формате d.m.Y\nПример: 01.01.2021')
+        label_end = QLabel('Дата конца периода в формате d.m.Y')
+
+        button_pie_managers = QPushButton("Диаграмма про менеджеров")
         button_pie_managers.clicked.connect(self.pie_managers)
         self.line_managers_name.returnPressed.connect(self.pie_managers)
         self.line_managers_dates_end.returnPressed.connect(self.pie_managers)
@@ -249,29 +247,29 @@ class ManagersBox(QtWidgets.QGroupBox):
             autocomplete['managers_end'] = self.line_managers_dates_end.text()
             json_dump()
         except ValueError:
-            warn = QtWidgets.QMessageBox()
+            warn = QMessageBox()
             warn.setText("Данные введены некорректно")
             warn.exec()
 
 
-class TypesBox(QtWidgets.QGroupBox):
+class TypesBox(QGroupBox):
     def __init__(self, data):
-        super(TypesBox, self).__init__('Распределение заявок по типам')
+        super(TypesBox, self).__init__('Распределение заявок по гарантийности')
         self.data = dict(data)
 
-        layout = QtWidgets.QVBoxLayout()
+        layout = QVBoxLayout()
 
-        label_begin = QtWidgets.QLabel('Дата начала периода в формате d.m.Y\nПример: 01.01.2021')
-        label_end = QtWidgets.QLabel('Дата конца периода в формате d.m.Y')
-        self.line_begin = QtWidgets.QLineEdit()
-        self.line_end = QtWidgets.QLineEdit()
-        
+        label_begin = QLabel('Дата начала периода в формате d.m.Y\nПример: 01.01.2021')
+        label_end = QLabel('Дата конца периода в формате d.m.Y')
+        self.line_begin = QLineEdit()
+        self.line_end = QLineEdit()
+
         if autocomplete.get('types_begin') is not None:
             self.line_begin.setText(autocomplete['types_begin'])
         if autocomplete.get('types_end') is not None:
             self.line_end.setText(autocomplete['types_end'])
-        
-        button_pie_managers = QtWidgets.QPushButton("Построить диаграмму")
+
+        button_pie_managers = QPushButton("Построить диаграмму")
         button_pie_managers.clicked.connect(self.pie_types)
 
         layout.addWidget(label_begin)
@@ -299,23 +297,23 @@ class TypesBox(QtWidgets.QGroupBox):
             autocomplete['types_end'] = self.line_end.text()
             json_dump()
         except ValueError:
-            warn = QtWidgets.QMessageBox()
+            warn = QMessageBox()
             warn.setText("Данные введены некорректно")
             warn.exec()
 
 
-class SettingsBox(QtWidgets.QGroupBox):
+class SettingsBox(QGroupBox):
     def __init__(self, data):
         super(SettingsBox, self).__init__('Прочее')
-        layout = QtWidgets.QVBoxLayout()
-        label_client_counter = QtWidgets.QLabel()
+        layout = QVBoxLayout()
+        label_client_counter = QLabel()
 
         label_client_counter.setText(
             'Клиентов за текущий год насчитано: ' + str(Analytics.ClientsCounter(data).get()))
-        button_settings = QtWidgets.QPushButton("Настройки парсера")
+        button_settings = QPushButton("Настройки парсера")
         layout.addWidget(button_settings)
         layout.addWidget(label_client_counter)
-        label_version = QtWidgets.QLabel("Версия 0.0.1 alpha")
+        label_version = QLabel("Версия 0.0.2 alpha")
         label_version.setAlignment(Qt.AlignRight)
         button_settings.clicked.connect(self.open_settings)
 
@@ -329,81 +327,68 @@ class SettingsBox(QtWidgets.QGroupBox):
         self.w.show()
 
 
-class Window(QtWidgets.QMainWindow):
+class Window(QWidget):
     def __init__(self):
         super().__init__()
-        wnd = QtWidgets.QWidget()
-        self.layout = QtWidgets.QVBoxLayout()
-        self.button = QtWidgets.QPushButton("Старт")
-        self.text1 = QtWidgets.QLabel("Введите адрес файла формата xlsx")
-        self.text2 = QtWidgets.QLabel("Введите имя листа")
-        self.input_1 = QtWidgets.QLineEdit()
+        # wnd =  QWidget()
+        self.layout = QVBoxLayout()
+        self.button = QPushButton("Старт")
+        self.text1 = QLabel("Введите адрес файла формата xlsx")
+        self.input_1 = QLineEdit()
         self.input_1.setMaximumWidth(250)
+        self.input_1.returnPressed.connect(self.get_text)
 
         if autocomplete.get('main_window_path') is not None:
             self.input_1.setText(autocomplete['main_window_path'])
 
-        self.input_2 = QtWidgets.QLineEdit()
-        self.input_2.setMaximumWidth(250)
-        if autocomplete.get('main_window_sheet') is not None:
-            self.input_2.setText(autocomplete['main_window_sheet'])
         self.button.setMaximumWidth(50)
-        self.label_parser = QtWidgets.QLabel('')
+        self.label_parser = QLabel('')
 
         self.layout.addWidget(self.text1)
         self.layout.addWidget(self.input_1)
-        self.layout.addWidget(self.text2)
-        self.layout.addWidget(self.input_2)
         self.layout.addWidget(self.button)
 
-        wnd.setLayout(self.layout)
+        self.setLayout(self.layout)
         self.button.clicked.connect(self.get_text)
-        self.input_2.returnPressed.connect(self.get_text)
 
-        self.setCentralWidget(wnd)
+        # self.setCentralWidget(wnd)
         self.setWindowTitle("Окно ввода данных")
         self.show()
 
     def get_text(self):
         self.label_parser.setText("Считывание данных...")
-        if self.input_1.text() != '' and self.input_2.text() != '':
+        if self.input_1.text() != '':
             try:
                 autocomplete['main_window_path'] = self.input_1.text()
-                autocomplete['main_window_sheet'] = self.input_2.text()
                 json_dump()
-                parser = Parser(self.input_1.text(), self.input_2.text())
+                parser = Parser(self.input_1.text(), 'TDSheet')
                 parser.parse()
                 self.widget = PlotChoice(parser.requests)
                 self.widget.setWindowTitle("Выбор графиков")
-                self.hide()
                 self.widget.show()
+                self.hide()
             except FileNotFoundError:
-                warn = QtWidgets.QMessageBox()
+                warn = QMessageBox()
                 warn.setText("Файл не найден")
                 warn.setWindowTitle("Э")
                 warn.exec()
             except exceptions.InvalidFileException:
-                warn = QtWidgets.QMessageBox()
+                warn = QMessageBox()
                 warn.setText("Неверный формат файла")
                 warn.setWindowTitle("Э")
                 warn.exec()
-            # except:
-            #     warn = QtWidgets.QMessageBox()
-            #     warn.setText("Непонятно, что сломалось")
-            #     warn.setWindowTitle("Э")
-            #     warn.exec()
         else:
-            warn = QtWidgets.QMessageBox()
+            warn = QMessageBox()
             warn.setText("Заполните поля")
             warn.setWindowTitle("Э")
             warn.exec()
 
 
-class PlotChoice(QtWidgets.QMainWindow):
+class PlotChoice(QMainWindow):
     def __init__(self, arr):
         super().__init__()
         self.data = arr
-        self.layout = QtWidgets.QGridLayout()
+        self.layout = QGridLayout()
 
         managers_box = ManagersBox(self.data)
         other = SimplePlots(self.data)
@@ -415,7 +400,7 @@ class PlotChoice(QtWidgets.QMainWindow):
         self.layout.addWidget(types_box, 1, 0)
         self.layout.addWidget(settings_box, 1, 1)
 
-        self.wnd = QtWidgets.QWidget()
+        self.wnd = QWidget()
         self.wnd.setLayout(self.layout)
         self.setCentralWidget(self.wnd)
 
@@ -438,6 +423,6 @@ except FileNotFoundError:
     f.close()
 
 if __name__ == "__main__":
-    app = QtWidgets.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     window = Window()
     sys.exit(app.exec())

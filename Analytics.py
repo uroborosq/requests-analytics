@@ -1,6 +1,5 @@
 from datetime import datetime
 from datetime import timedelta
-import Request
 
 
 def __sunday__(to_sunday):
@@ -44,58 +43,72 @@ def __sort_by_date__(array):
     return new_array
 
 
-def __init_dict__(array, year):
-    for i in range(12):
-        array[datetime(year, i + 1, 1)] = 0
+def __init_dict__(array, year, mode, value):
+    if mode == 'month':
+        for i in range(12):
+            array[datetime(year, i + 1, 1)] = value
+    elif mode == 'week':
+        pointer = __sunday__(datetime(datetime.today().year, 1, 1)).date()
+        while pointer.year == datetime.today().year:
+            array[pointer] = value
+            pointer = __time_iter__(pointer, 'week')
+    return array
 
 
-class DoneRequests(object):
+class Done(object):
     def __init__(self, requests):
         self.array = dict(requests)
-        self.requests_by_weeks = {}
         self.done_requests_by_weeks = {}
-        self.__init_dict()
+        __init_dict__(self.done_requests_by_weeks, datetime.today().year, 'week', 0)
 
         for i in self.array.values():
             if i.date_end != '' and i.status == "Закрыто" and i.date_end.year == datetime.today().year:
-                if self.done_requests_by_weeks.get(__sunday__(i.date_end.date())) is None:
-                    self.done_requests_by_weeks[__sunday__(i.date_end.date())] = 1
-                else:
                     self.done_requests_by_weeks[__sunday__(i.date_end.date())] += 1
 
-    def __init_dict(self):
-        pointer = __sunday__(datetime(datetime.today().year, 1, 1)).date()
-        while pointer.year == datetime.today().year:
-            self.done_requests_by_weeks[pointer] = 0
-            pointer = __time_iter__(pointer, 'week')
-
     def get(self):
-        return [self.requests_by_weeks, self.done_requests_by_weeks]
+        return self.done_requests_by_weeks
 
 
-class AllRequestsThreeYears(object):
-    def __init__(self, array):
-        self.current_year = datetime.today().year
-
-        self.year0 = {}
-        self.year1 = {}
-        self.year2 = {}
-        __init_dict__(self.year0, self.current_year)
-        __init_dict__(self.year1, self.current_year - 1)
-        __init_dict__(self.year2, self.current_year - 2)
+class Received(object):
+    def __init__(self, array, year, mode):
+        self.year = {}
+        __init_dict__(self.year, year, mode, 0)
 
         for i in array.values():
-            if i.date_begin.year == self.current_year:
-                self.year0[datetime(i.date_begin.year, i.date_begin.month, 1)] += 1
-
-            elif i.date_begin.year == self.current_year - 1:
-                self.year1[datetime(i.date_begin.year, i.date_begin.month, 1)] += 1
-
-            elif i.date_begin.year == self.current_year - 2:
-                self.year2[datetime(i.date_begin.year, i.date_begin.month, 1)] += 1
+            if i.date_begin.year == year:
+                if mode == 'month':
+                    self.year[datetime(i.date_begin.year, i.date_begin.month, 1)] += 1
+                elif mode == 'week':
+                    self.year[__sunday__(i.date_begin.date())] += 1
 
     def get(self):
-        return [self.year0, self.year1, self.year2, self.current_year]
+        return self.year
+
+
+class Waiting(object):
+    def __init__(self, array):
+        cur_year = datetime.today().year
+        self.requests = {}
+        __init_dict__(self.requests, datetime.today().year, 'week', 0)
+
+        for i in array.values():
+            if i.date_begin.year == cur_year and i.status == 'Закрыто'\
+                    and i.date_end != '':
+
+                pointer = __sunday__(i.date_begin).date()
+                while pointer < i.date_end.date():
+                    self.requests[pointer] += 1
+                    pointer = __time_iter__(pointer, 'week')
+
+            elif i.date_begin.year == cur_year and i.status != 'Закрыто':
+
+                pointer = __sunday__(i.date_begin).date()
+                while pointer < datetime.today().date():
+                    self.requests[pointer] += 1
+                    pointer = __time_iter__(pointer, 'week')
+
+    def get(self):
+        return self.requests
 
 
 class AverageTime(object):
@@ -103,7 +116,8 @@ class AverageTime(object):
         self.array = dict(array)
         self.year = {}
         for i in range(12):
-            self.year[datetime(datetime.today().year, i + 1, 1)] = []
+            self.year[datetime(datetime.today().year, i + 1, 1)] = list()
+        #self.year = __init_dict__(self.year, datetime.today().year, 'month', [])
 
         for i in self.array.values():
             if i.date_end != '':
@@ -200,7 +214,8 @@ class DelayProvider(object):
 class Types(object):
     def __init__(self, array, begin, end):
         types = {}
-
+        self.begin = begin
+        self.end = end
         for i in array.values():
             if end >= i.date_begin.date() >= begin:
                 tmp = i.warranty if i.warranty is not None else 'Не указано'
@@ -219,7 +234,7 @@ class Types(object):
             self.sorted_dict[sorted_keys[len(types) // 2]] = types[sorted_keys[len(types) // 2]]
 
     def get(self):
-        return self.sorted_dict
+        return [self.sorted_dict, self.begin, self.end]
 
 
 class Managers(object):
@@ -276,32 +291,9 @@ class ClientsCounter(object):
         return len(self.clients)
 
 
-class WaitingRequests(object):
-    def __init_dict(self):
-        pointer = __sunday__(datetime(datetime.today().year, 1, 1)).date()
-        while pointer.year == datetime.today().year:
-            self.requests[pointer] = 0
-            pointer = __time_iter__(pointer, 'week')
 
-    def __init__(self, array):
-        cur_year = datetime.today().year
-        self.requests = {}
-        self.__init_dict()
-        for i in array.values():
-            if i.date_begin.year == cur_year and i.status == 'Закрыто'\
-                    and i.date_end != '':
-                pointer = __sunday__(i.date_begin).date()
-                while pointer < i.date_end.date():
-                    self.requests[pointer] += 1
-                    pointer = __time_iter__(pointer, 'week')
-            elif i.date_begin.year == cur_year and i.status != 'Закрыто':
-                pointer = __sunday__(i.date_begin).date()
-                while pointer < datetime.today().date():
-                    self.requests[pointer] += 1
-                    pointer = __time_iter__(pointer, 'week')
 
-    def get(self):
-        return self.requests
+
 
 
 class DaySchedule(object):

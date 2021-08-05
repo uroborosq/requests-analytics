@@ -51,6 +51,9 @@ class Parser(object):
             elif i[7].value is not None and datetime.strptime(i[7].value, '%d.%m.%Y %H:%M:%S') > datetime.today():
                 error_output.write(str(i[1].value) + " - дата закрытия превышает сегодняшнюю\n")
             else:
+                if i[7].value is None:
+                    error_output.write(str(i[1].value) + " - не указана дата закрытия\n")
+
                 self.requests[i[1].value] = Request(
                     begin_=i[__row_to_index__(self.settings['date_begin'])].value if self.settings.get('date_begin') is not None else files.return_dict()['date_begin'],
                     end_=i[__row_to_index__(self.settings['date_end'])].value if self.settings.get('date_begin') is not None else files.return_dict()['date_end'],

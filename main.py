@@ -19,6 +19,38 @@ def json_dump():
     file.close()
 
 
+class PrioritySettingsWindow(QWidget):
+    def __init__(self):
+        super().__init__()
+        layout = QVBoxLayout()
+        self.line = QLineEdit()
+        button_set = QPushButton('Применить настройки')
+        button_set.clicked.connect(self.set_custom)
+        self.button_set_default = QPushButton('Установить настройки по умолчанию')
+        self.button_set_default.clicked.connect(files.set_default_priority)
+        self.line.returnPressed.connect(self.set_custom)
+        with open('.priority_settings.json', 'r') as file:
+            settings = json.load(file)
+            for i in list(settings.keys())[:-1]:
+                self.line.setText(self.line.text() + ',' + i)
+        self.line.setText(self.line.text()[1:])
+        layout.addWidget(self.line)
+        layout.addWidget(button_set)
+        layout.addWidget(self.button_set_default)
+
+        self.setLayout(layout)
+
+    def set_custom(self):
+        keys = [i for i in self.line.text().split(',')]
+        settings = {}
+        for i in keys:
+            settings[i] = []
+        settings['Неизвестный тип или не заполнено'] = []
+        file = open('.priority_settings.json', 'w')
+        json.dump(settings, file, indent=4)
+        file.close()
+
+
 class DayScheduleWindow(QMainWindow):
     def __init__(self, arr):
         super().__init__()
@@ -135,6 +167,7 @@ class SimplePlots(QGroupBox):
         button_provider_delay = QPushButton('Вывести в файл просрочки поставщика')
         button_day_schedule = QPushButton("Форма для дневного отчета")
         button_warranty = QPushButton("Диаграмма про гарантию и вывод в файл")
+        button_priority = QPushButton("Распределение приоритетов")
 
         button_plot_three_years.clicked.connect(self.plot_three_years)
         button_warranty.clicked.connect(self.warranty)
@@ -143,6 +176,7 @@ class SimplePlots(QGroupBox):
         button_waitdonerecieve.clicked.connect(self.plot_donewaitrecieve)
         button_provider_delay.clicked.connect(self.find_provider_delay)
         button_day_schedule.clicked.connect(self.day_schedule)
+        button_priority.clicked.connect(self.priority)
 
         layout = QVBoxLayout()
         layout.addWidget(button_plot_three_years)
@@ -152,6 +186,7 @@ class SimplePlots(QGroupBox):
         layout.addWidget(button_provider_delay)
         layout.addWidget(button_day_schedule)
         layout.addWidget(button_warranty)
+        layout.addWidget(button_priority)
 
         self.setLayout(layout)
         self.w = 0
@@ -187,6 +222,10 @@ class SimplePlots(QGroupBox):
             Analytics.Waiting(self.data).get(),
             Analytics.Done(self.data).get()
         ])
+
+    def priority(self):
+        plots.Pie(Analytics.Priority(self.data).get(), title='Распределение приоритетов в незакрытых заявках',
+                  suptitle='Распределение приоритетов в незакрытых заявках')
 
 
 class ManagersBox(QGroupBox):
@@ -311,11 +350,14 @@ class SettingsBox(QGroupBox):
         label_client_counter.setText(
             'Клиентов за текущий год насчитано: ' + str(Analytics.ClientsCounter(data).get()))
         button_settings = QPushButton("Настройки парсера")
+        button_priority = QPushButton("Настройки диаграммы приоритетов")
         layout.addWidget(button_settings)
+        layout.addWidget(button_priority)
         layout.addWidget(label_client_counter)
-        label_version = QLabel("Версия 0.0.2 alpha")
+        label_version = QLabel("Версия 0.0.3 alpha")
         label_version.setAlignment(Qt.AlignRight)
         button_settings.clicked.connect(self.open_settings)
+        button_priority.clicked.connect(self.open_priority)
 
         layout.addWidget(label_version)
 
@@ -324,6 +366,11 @@ class SettingsBox(QGroupBox):
     def open_settings(self):
         self.w = ParserSettingsWindow()
         self.w.setWindowTitle('Настройки парсера')
+        self.w.show()
+
+    def open_priority(self):
+        self.w = PrioritySettingsWindow()
+        self.w.setWindowTitle('Настройки диаграммы приоритетов')
         self.w.show()
 
 

@@ -57,8 +57,8 @@ parser.parse()
 
 #plots.WarrantyPie(Analytics.Warranty(parser.requests).get())
 
-plots.DoneWaitReceive(
-    [Analytics.Received(parser.requests).get()[0],
-     Analytics.Waiting(parser.requests).get(),
-     Analytics.Done(parser.requests).get()]
-                      )
+# plots.DoneWaitReceive(
+#     [Analytics.Received(parser.requests).get()[0],
+#      Analytics.Waiting(parser.requests).get(),
+#      Analytics.Done(parser.requests).get()]
+#                       )

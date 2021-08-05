@@ -1,7 +1,7 @@
 import datetime
 
 from matplotlib import use
-from matplotlib.pyplot import subplots, show
+from matplotlib.pyplot import subplots, show, text
 
 use("Qt5Agg")
 
@@ -37,7 +37,7 @@ class PlotThreeYears(object):
 
 class PiePhases(object):
     def __init__(self, arr):
-        fig, axes = subplots(nrows=1, ncols=2, num='Фазы незакрытых заявок')
+        fig, axes = subplots(nrows=1, ncols=1, num='Фазы незакрытых заявок')
 
         labels = list(arr.keys())
 
@@ -48,14 +48,11 @@ class PiePhases(object):
         for i in arr.values():
             explode.append(0.0025 / (i / sum(arr.values())))
 
-        wedges = axes[0].pie(arr.values(), labels=list(labels), explode=explode)
+        axes.pie(arr.values(), labels=list(labels), explode=explode)
 
-        axes[0].axis('equal')
-        axes[1].axis('off')
-        axes[1].legend(wedges[0], arr.keys(), loc="upper right", title="Фазы заявок")
-
-        fig.suptitle("Фазы незакрытых заявок. Всего незакрытых: " + str(sum(arr.values())) + '. Отчет сформирован ' +
-                     str(datetime.datetime.today().date()))
+        axes.axis('equal')
+        text(0, -1.3, 'Всего заявок:' + str(sum(arr.values())), fontsize='x-large', ha='center')
+        fig.suptitle("Фазы незакрытых заявок" + '. Отчет сформирован ' + str(datetime.datetime.today().date()))
         show()
 
 
@@ -76,9 +73,9 @@ class PlotAverageTime(object):
 
 class PieTypes(object):
     def __init__(self, data):
-        fig, axes = subplots(nrows=1, ncols=2, num="Распределение заявок по гарантийности в "
-                                                   + str(
-            datetime.datetime.today().year) + " году. " + "Отчет сформирован " + str(datetime.datetime.today().date()))
+        fig, axes = subplots(nrows=1, ncols=1, num="Распределение заявок по гарантийности в "
+                                + str(datetime.datetime.today().year) + " году. " + "Отчет сформирован "
+                                + str(datetime.datetime.today().date()))
 
         labels = list(data[0].keys())
 
@@ -89,12 +86,10 @@ class PieTypes(object):
         for i in data[0].values():
             explode.append(0.000025 / (i / sum(data[0].values())))
 
-        wedges = axes[0].pie(data[0].values(), labels=labels, explode=explode)
+        axes.pie(data[0].values(), labels=labels, explode=explode)
 
-        axes[0].axis('equal')
-        axes[1].axis('off')
-        axes[1].legend(wedges[0], labels, loc="upper right", title="Типы заявок. Всего заявок: " +
-                                                                   str(sum(list(data[0].values()))))
+        axes.axis('equal')
+        text(0, -1.25, 'Всего заявок:' + str(sum(data[0].values())), fontsize='x-large', ha='center')
 
         fig.suptitle("Распределение заявок по гарантийности в период c " + str(data[1]) + " по " +
                      str(data[2]))
@@ -103,20 +98,18 @@ class PieTypes(object):
 
 class PieManagers(object):
     def __init__(self, data):
-        fig, axes = subplots(nrows=1, ncols=2, num='Распределение нагрузки на менеджеров')
+        fig, axes = subplots(nrows=1, ncols=1, num='Распределение нагрузки на менеджеров')
         labels = list(data.keys())
 
         for i in range(len(labels)):
             labels[i] = labels[i] + ": " + str(data[labels[i]]) + " шт" + '(' + \
                         str("%.1f" % (data[labels[i]] / sum(data.values()) * 100)) + '%)'
 
-        wedges = axes[0].pie(data.values(), labels=labels)
+        axes.pie(data.values(), labels=labels)
 
-        axes[0].axis('equal')
-        axes[1].axis('off')
-        axes[1].legend(wedges[0], data.keys(), loc="upper right", title="Список менеджеров")
-
-        fig.suptitle("Распределение нагрузки на менеджеров. Всего заявок: " + str(sum(data.values())))
+        axes.axis('equal')
+        text(0, -1.25, 'Всего заявок:' + str(sum(data.values())), fontsize='x-large', ha='center')
+        fig.suptitle("Распределение нагрузки на менеджеров")
         show()
 
 
@@ -143,7 +136,7 @@ class PlotWaitingRequests(object):
 
 class WarrantyPie(object):
     def __init__(self, data):
-        fig, axes = subplots(nrows=1, ncols=2, num='Распределение незакрытых гарантийных заявок по срокам на'
+        fig, axes = subplots(nrows=1, ncols=1, num='Распределение незакрытых гарантийных заявок по срокам на'
                                                    + str(datetime.datetime.today().date()))
         labels = list(data.keys())
         for i in range(len(labels)):
@@ -153,15 +146,11 @@ class WarrantyPie(object):
         for i in data.values():
             explode.append(0.000025 / (i / sum(data.values())))
 
-        wedges = axes[0].pie(data.values(), labels=labels, explode=explode)
+        axes.pie(data.values(), labels=labels, explode=explode)
 
-        axes[0].axis('equal')
-        axes[1].axis('off')
-        axes[1].legend(wedges[0], labels, loc="upper right", title="Периоды")
-
-        fig.suptitle("Распределение незакрытых гарантийных заявок в " + str(datetime.datetime.today().year) + " году"
-                                                                                            '. Всего заявок: ' + str(
-            sum(data.values())))
+        axes.axis('equal')
+        text(0, -1.25, 'Всего заявок:' + str(sum(data.values())), fontsize='x-large', ha='center')
+        fig.suptitle("Распределение незакрытых гарантийных заявок в " + str(datetime.datetime.today().year) + " году")
         show()
 
 
@@ -170,10 +159,39 @@ class DoneWaitReceive(object):
         fig, axes = subplots(nrows=1, ncols=1, num='Соотношение поступивших, незакрытых и закрытых заявок в ' +
                                                    str(datetime.datetime.today().year) + ' году')
 
-        axes.plot(data[0].keys(), data[0].values(), label='Поступившие', marker='o')
-        axes.plot(data[1].keys(), data[1].values(), label='Незакрытые', marker='o')
-        axes.plot(data[2].keys(), data[2].values(), label='Закрытые', marker='o')
+        stop = len(data[0])
+
+        for i in reversed(data[0].values()):
+            if i != 0:
+                break
+            stop -= 1
+
+        axes.plot(list(data[0].keys())[:stop + 1], list(data[0].values())[:stop + 1], label='Поступившие', marker='o')
+        axes.plot(list(data[1].keys())[:stop + 1], list(data[1].values())[:stop + 1], label='Незакрытые', marker='o')
+        axes.plot(list(data[2].keys())[:stop + 1], list(data[2].values())[:stop + 1], label='Закрытые', marker='o')
         axes.legend()
         axes.grid(True)
 
+        axes.set_title(' Соотношение поступивших, незакрытых и закрытых заявок в ' +
+                                                   str(datetime.datetime.today().year) + ' году')
+
+        show()
+
+
+class Pie(object):
+    def __init__(self, data, title, suptitle):
+        fig, axes = subplots(nrows=1, ncols=1, num=title)
+        labels = list(data.keys())
+        for i in range(len(labels)):
+            labels[i] = labels[i] + ": " + str(data[labels[i]]) + " шт" + '(' + \
+                        str("%.1f" % (data[labels[i]] / sum(data.values()) * 100)) + '%)'
+        explode = []
+        for i in data.values():
+            explode.append(0.000025 / (i / sum(data.values())))
+
+        axes.pie(data.values(), labels=labels, explode=explode)
+
+        axes.axis('equal')
+        text(0, -1.25, 'Всего заявок:' + str(sum(data.values())), fontsize='x-large', ha='center')
+        fig.suptitle(suptitle)
         show()

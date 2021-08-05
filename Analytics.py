@@ -1,5 +1,8 @@
+import json
 from datetime import datetime
 from datetime import timedelta
+
+import files
 
 
 def __sunday__(to_sunday):
@@ -58,15 +61,15 @@ def __init_dict__(array, year, mode, value):
 class Done(object):
     def __init__(self, requests):
         self.array = dict(requests)
-        self.done_requests_by_weeks = {}
-        __init_dict__(self.done_requests_by_weeks, datetime.today().year, 'week', 0)
+        self.requests = {}
+        __init_dict__(self.requests, datetime.today().year, 'week', 0)
 
         for i in self.array.values():
             if i.date_end != '' and i.status == "Закрыто" and i.date_end.year == datetime.today().year:
-                    self.done_requests_by_weeks[__sunday__(i.date_end.date())] += 1
+                self.requests[__sunday__(i.date_end.date())] += 1
 
     def get(self):
-        return self.done_requests_by_weeks
+        return self.requests
 
 
 class Received(object):
@@ -291,11 +294,6 @@ class ClientsCounter(object):
         return len(self.clients)
 
 
-
-
-
-
-
 class DaySchedule(object):
     def __init__(self, data, date):
         self.engeenires = {}
@@ -322,3 +320,37 @@ class RequestRepeats(object):
                     pass
                 else:
                     self.requests[key] = [[i.date_begin]]
+
+
+class Priority(object):
+    def __init__(self, data):
+        try:
+            file = open('.priority_settings.json', 'r')
+            self.requests = json.load(file)
+            file.close()
+        except FileNotFoundError:
+            self.requests = files.set_default_priority()
+        except json.decoder.JSONDecodeError:
+            self.requests = files.set_default_priority()
+
+        file = open('Приоритеты.txt', 'w')
+
+        for i in data.values():
+            if i.status != 'Закрыто':
+                if self.requests.get(i.priority) is not None:
+                    self.requests[i.priority].append(i.id)
+                else:
+                    self.requests['Неизвестный тип или не заполнено'].append(i.id)
+
+        for i in self.requests:
+            file.write(i + ':\n')
+            for j in self.requests[i]:
+                file.write(j + '\n')
+
+        for i in self.requests:
+            self.requests[i] = len(self.requests[i])
+
+    def get(self):
+        return self.requests
+
+

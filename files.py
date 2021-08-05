@@ -16,8 +16,8 @@ class DaySchedule(object):
         worksheet.merge_cells('L4:M4')
 
         tmp = {'A4': '№ п/п', 'B4': '№ наряд-заказа', 'C4': 'Исполнитель', 'D4': 'Гарантия/внутр/платно',
-               'E4': 'ЗИП потратил', 'F4': 'В электронном виде прислал', 'F5': 'Описание работ', 'G5': 'Наряд-заказ',
-               'H5': 'Гарталон', 'I5': 'Сер номер', 'J5': 'Деталь', 'K5': 'Шильда', 'L4': 'В бумажном виде',
+               'E4': 'Сколько ЗИП потратил', 'F4': 'В электронном виде прислал', 'F5': 'Описание работ', 'G5': 'Наряд-заказ',
+               'H5': 'Гарталон', 'I5': 'Сер номер', 'J5': 'Деталь', 'K5': 'Шильда', 'L4': 'Сдал в бумажном виде',
                'L5': 'Наряд-заказ', 'M5': 'Накладные'}
         for i in tmp:
             worksheet[i] = tmp[i]
@@ -51,7 +51,7 @@ class DaySchedule(object):
                 tmp.append(tmp[i] + str(j + 6))
 
         for i in ['B2', 'C2', 'A4', 'B4', 'C4', 'D4', 'E4', 'F4', 'F5', 'G5', 'H5', 'I5', 'J5', 'K5', 'L4', 'L5', 'M5',
-                  'A5', 'B5', 'C5', 'D5', 'E5', 'M4', 'G4', 'H4', 'I4', 'J4'] + tmp[13:]:
+                  'A5', 'B5', 'C5', 'D5', 'E5', 'M4', 'G4', 'H4', 'I4', 'J4', 'K4'] + tmp[13:]:
             worksheet[i].border = styles.Border(top=styles.Side(border_style="thin", color="000000"),
                                                 left=styles.Side(border_style="thin", color="000000"),
                                                 right=styles.Side(border_style="thin", color="000000"),
@@ -93,3 +93,27 @@ def set_default():
 
 def return_number():
     return len(return_dict())
+
+
+def default_priority():
+    return {
+        'Гарантия14 дн.': [],
+        'ФОК-Гарантия': [],
+        'Население-Гарантия': [],
+        'ФОК-Платно': [],
+        'Население-платно': [],
+        'Внутренние работы': [],
+        'Неизвестный тип или не заполнено': []
+    }
+
+
+def set_default_priority():
+    file = open('.priority_settings.json', 'w')
+    settings = default_priority()
+    json.dump(settings, file, indent=4)
+    file.close()
+    return settings
+
+
+def number_priority():
+    return len(default_priority())

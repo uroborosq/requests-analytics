@@ -199,7 +199,8 @@ class SimplePlots(QGroupBox):
         ])
 
     def pie_phases(self):
-        plots.PiePhases(Analytics.Phases(self.data).get())
+        plots.Pie(Analytics.Phases(self.data).get(), title='Фазы незакрытых заявок',
+                  suptitle="Фазы незакрытых заявок" + '. Отчет сформирован ' + str(datetime.datetime.today().date()))
 
     def plot_average_time(self):
         plots.PlotAverageTime(Analytics.AverageTime(self.data).get())
@@ -214,7 +215,9 @@ class SimplePlots(QGroupBox):
         self.w.show()
 
     def warranty(self):
-        plots.WarrantyPie(Analytics.Warranty(self.data).get())
+        plots.Pie(Analytics.Warranty(self.data).get(), title='Распределение незакрытых гарантийных заявок по срокам на'
+                                                   + str(datetime.datetime.today().date()),
+                  suptitle="Распределение незакрытых гарантийных заявок в " + str(datetime.datetime.today().year) + " году")
 
     def plot_donewaitrecieve(self):
         plots.DoneWaitReceive([
@@ -280,7 +283,8 @@ class ManagersBox(QGroupBox):
 
             names = self.line_managers_name.text()
 
-            plots.PieManagers(Analytics.Managers(self.data, names, begin, end).get())
+            plots.Pie(Analytics.Managers(self.data, names, begin, end).get(), title='Распределение нагрузки на менеджеров',
+                     suptitle="Распределение нагрузки на менеджеров")
             autocomplete['managers_names'] = self.line_managers_name.text()
             autocomplete['managers_begin'] = self.line_managers_dates_begin.text()
             autocomplete['managers_end'] = self.line_managers_dates_end.text()
@@ -331,7 +335,8 @@ class TypesBox(QGroupBox):
             else:
                 end = datetime.datetime.max.date()
 
-            plots.PieTypes(Analytics.Types(self.data, begin, end).get())
+            plots.Pie(Analytics.Types(self.data, begin, end).get(), suptitle="Распределение заявок по гарантийности в период c " + str(begin) + " по " +
+                     str(end), title="Распределение заявок по гарантийности в период c " + str(begin) + " по " + str(end))
             autocomplete['types_begin'] = self.line_begin.text()
             autocomplete['types_end'] = self.line_end.text()
             json_dump()

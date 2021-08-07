@@ -237,7 +237,7 @@ class Types(object):
             self.sorted_dict[sorted_keys[len(types) // 2]] = types[sorted_keys[len(types) // 2]]
 
     def get(self):
-        return [self.sorted_dict, self.begin, self.end]
+        return self.sorted_dict
 
 
 class Managers(object):

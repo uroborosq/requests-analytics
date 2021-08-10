@@ -29,7 +29,7 @@ class PlotThreeYears(object):
         axes.set_ylabel('Количество поступивших, шт')
         axes.set_xlabel('Время, месяцы')
         axes.set_title("Поступившие заявки на " + str(datetime.datetime.today().date())
-                       + ". Сравнение текущего года с 2-мя предыдущими.")
+                       + ".\nСравнение текущего года с 2-мя предыдущими.")
         axes.legend()
         axes.grid(True)
 
@@ -75,7 +75,7 @@ class DoneWaitReceive(object):
         axes.legend()
         axes.grid(True)
 
-        axes.set_title(' Соотношение поступивших, незакрытых и закрытых заявок в ' +
+        axes.set_title(' Соотношение поступивших, незакрытых и закрытых заявок\n в ' +
                                                    str(datetime.datetime.today().year) + ' году')
 
         show()

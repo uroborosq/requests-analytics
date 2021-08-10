@@ -41,13 +41,13 @@ class DaySchedule(object):
                 worksheet['D' + str(counter + 5)] = j[1]
                 counter += 1
 
-        for i in range(counter - 1):
+        for i in range(counter + 2):
             rw = worksheet.row_dimensions[i + 6]
             rw.height = 60
 
         tmp = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M']
         for i in range(13):
-            for j in range(counter - 1):
+            for j in range(counter + 2):
                 tmp.append(tmp[i] + str(j + 6))
 
         for i in ['B2', 'C2', 'A4', 'B4', 'C4', 'D4', 'E4', 'F4', 'F5', 'G5', 'H5', 'I5', 'J5', 'K5', 'L4', 'L5', 'M5',

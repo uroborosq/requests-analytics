@@ -22,50 +22,74 @@ class Parser(object):
     def __init__(self, path_, sheet_):
         self.file = load_workbook(filename=path_, read_only=True)
         self.sheet = self.file[sheet_]
-        self.settings = {}
+        self.set = {}
+        self.lines_to_skip = 6
 
-    def parse(self):
-
+    def __determine_settings__(self):
         try:
             settings_file = open('.parser_settings.json', 'r')
-            self.settings = json.load(settings_file)
+            self.set = json.load(settings_file)
         except FileNotFoundError:
-            files.set_default()
+            self.set = files.set_default()
         except json.decoder.JSONDecodeError:
-            files.set_default()
+            self.set = files.set_default()
 
+        if self.set.get('lines_to_skip') is not None:
+            self.lines_to_skip = eval(self.set['lines_to_skip'])
+
+        for i in [
+            'id',
+            'date_begin',
+            'date_end',
+            'date_begin_working',
+            'status',
+            'phase',
+            'engineer',
+            'manager',
+            'type',
+            'priority',
+            'client',
+            'model',
+            'address'
+        ]:
+            if self.set.get(i) is None:
+                self.set[i] = files.return_dict()[i]
+
+        for i in self.set:
+            self.set[i] = __row_to_index__(self.set[i])
+
+    def parse(self):
         error_output = open('errors_while_parsing.txt', 'w')
         counter = 0
-        lines_to_skip = 6
-        if self.settings.get('lines_to_skip') is not None:
-            lines_to_skip = eval(self.settings['lines_to_skip'])
-
+        self.__determine_settings__()
         for i in self.sheet:
-            if counter < lines_to_skip:
+            if counter < self.lines_to_skip:
                 counter += 1
                 continue
-            if self.requests.get(i[1].value) is not None:
-                self.requests[i[1].value].add_engineer(i[__row_to_index__(self.settings['engineer'])].value)
-            elif i[7].value is not None and datetime.strptime(i[7].value, '%d.%m.%Y %H:%M:%S').year < 2018:
-                error_output.write(str(i[1].value) + " - неправильный год\n")
-            elif i[7].value is not None and datetime.strptime(i[7].value, '%d.%m.%Y %H:%M:%S') > datetime.today():
-                error_output.write(str(i[1].value) + " - дата закрытия превышает сегодняшнюю\n")
+            if self.requests.get(i[self.set['id']].value) is not None:
+                self.requests[i[self.set['id']].value].add_engineer(i[self.set['engineer']].value)
+            elif i[self.set['date_end']].value is not None and\
+                    datetime.strptime(i[self.set['date_end']].value, '%d.%m.%Y %H:%M:%S').year < 2018:
+                error_output.write(i[self.set['id']].value + " - неправильный год\n")
+            elif i[self.set['date_end']].value is not None and\
+                    datetime.strptime(i[self.set['date_end']].value, '%d.%m.%Y %H:%M:%S') > datetime.today():
+                error_output.write(i[self.set['id']].value + " - дата закрытия превышает сегодняшнюю\n")
             else:
-                if i[7].value is None:
-                    error_output.write(str(i[1].value) + " - не указана дата закрытия\n")
+                if i[self.set['date_end']].value is None and i[self.set['status']].value == 'Закрыто':
+                    error_output.write(i[self.set['id']].value + " - не указана дата закрытия\n")
 
-                self.requests[i[1].value] = Request(
-                    begin_=i[__row_to_index__(self.settings['date_begin'])].value if self.settings.get('date_begin') is not None else files.return_dict()['date_begin'],
-                    end_=i[__row_to_index__(self.settings['date_end'])].value if self.settings.get('date_begin') is not None else files.return_dict()['date_end'],
-                    id_=i[__row_to_index__(self.settings['id'])].value if self.settings.get('id') is not None else files.return_dict()['id'],
-                    status_=i[__row_to_index__(self.settings['status'])].value if self.settings.get('status') is not None else files.return_dict()['status'],
-                    manager_=i[__row_to_index__(self.settings['manager'])].value if self.settings.get('manager') is not None else files.return_dict()['manager'],
-                    engineer_=i[__row_to_index__(self.settings['engineer'])].value if self.settings.get('engineer') is not None else files.return_dict()['engineer'],
-                    warranty_=i[__row_to_index__(self.settings['type'])].value if self.settings.get('type') is not None else files.return_dict()['type'],
-                    request_state_=i[__row_to_index__(self.settings['phase'])].value if self.settings.get('phase') is not None else files.return_dict()['phase'],
-                    client_=i[__row_to_index__(self.settings['client'])].value if self.settings.get('client') is not None else files.return_dict()['client'],
-                    begin_working_=i[__row_to_index__(self.settings['date_begin_working'])].value if self.settings.get('date_begin_working') is not None else files.return_dict()['date_begin_working'],
-                    model_=i[__row_to_index__(self.settings['model'])].value if self.settings.get('model') is not None else files.return_dict()['model'],
-                    address_=i[__row_to_index__(self.settings['address'])].value if self.settings.get('address') is not None else files.return_dict()['address'],
-                    priority_=i[__row_to_index__(self.settings['priority'])].value if self.settings.get('priority') is not None else files.return_dict()['priority']
+                self.requests[i[self.set['id']].value] = Request(
+                    begin_=i[self.set['date_begin']].value,
+                    end_=i[self.set['date_end']].value,
+                    id_=i[self.set['id']].value,
+                    status_=i[self.set['status']].value,
+                    manager_=i[self.set['manager']].value,
+                    engineer_=i[self.set['engineer']].value,
+                    warranty_=i[self.set['type']].value,
+                    request_state_=i[self.set['phase']].value,
+                    client_=i[self.set['client']].value,
+                    begin_working_=i[self.set['date_begin_working']].value,
+                    model_=i[self.set['model']].value,
+                    address_=i[self.set['address']].value,
+                    priority_=i[self.set['priority']].value
                 )

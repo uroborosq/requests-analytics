@@ -29,10 +29,13 @@ class PrioritySettingsWindow(QWidget):
         self.button_set_default = QPushButton('Установить настройки по умолчанию')
         self.button_set_default.clicked.connect(files.set_default_priority)
         self.line.returnPressed.connect(self.set_custom)
-        with open('.priority_settings.json', 'r') as file:
-            settings = json.load(file)
-            for i in list(settings.keys())[:-1]:
-                self.line.setText(self.line.text() + ',' + i)
+        try:
+            with open('.priority_settings.json', 'r') as file:
+                settings = json.load(file)
+        except FileNotFoundError or json.decoder.JSONDecodeError:
+            settings = files.set_default_priority()
+        for i in list(settings.keys())[:-1]:
+            self.line.setText(self.line.text() + ',' + i)
         self.line.setText(self.line.text()[1:])
         layout.addWidget(self.line)
         layout.addWidget(button_set)
@@ -217,7 +220,8 @@ class SimplePlots(QGroupBox):
     def warranty(self):
         plots.Pie(Analytics.Warranty(self.data).get(), title='Распределение незакрытых гарантийных заявок по срокам на'
                                                    + str(datetime.datetime.today().date()),
-                  suptitle="Распределение незакрытых гарантийных заявок в " + str(datetime.datetime.today().year) + " году")
+                  suptitle='Распределение незакрытых гарантийных заявок по срокам\n на '
+                                                   + str(datetime.datetime.today().date()))
 
     def plot_donewaitrecieve(self):
         plots.DoneWaitReceive([
@@ -228,7 +232,7 @@ class SimplePlots(QGroupBox):
 
     def priority(self):
         plots.Pie(Analytics.Priority(self.data).get(), title='Распределение приоритетов в незакрытых заявках',
-                  suptitle='Распределение приоритетов в незакрытых заявках')
+                  suptitle='Распределение приоритетов в незакрытых заявках на ' + str(datetime.datetime.today().date()))
 
 
 class ManagersBox(QGroupBox):
@@ -272,7 +276,7 @@ class ManagersBox(QGroupBox):
         self.setLayout(layout)
 
     def pie_managers(self):
-        begin, end = '', ''
+        begin, end = datetime.datetime.max, datetime.datetime.min
         try:
             if self.line_managers_dates_begin.text() != '':
                 begin = datetime.datetime.strptime(self.line_managers_dates_begin.text(), '%d.%m.%Y')
@@ -284,7 +288,8 @@ class ManagersBox(QGroupBox):
             names = self.line_managers_name.text()
 
             plots.Pie(Analytics.Managers(self.data, names, begin, end).get(), title='Распределение нагрузки на менеджеров',
-                     suptitle="Распределение нагрузки на менеджеров")
+                     suptitle="Распределение нагрузки на менеджеров\n в период с " + str(begin) + " по " +
+                      str(end))
             autocomplete['managers_names'] = self.line_managers_name.text()
             autocomplete['managers_begin'] = self.line_managers_dates_begin.text()
             autocomplete['managers_end'] = self.line_managers_dates_end.text()
@@ -335,7 +340,7 @@ class TypesBox(QGroupBox):
             else:
                 end = datetime.datetime.max.date()
 
-            plots.Pie(Analytics.Types(self.data, begin, end).get(), suptitle="Распределение заявок по гарантийности в период c " + str(begin) + " по " +
+            plots.Pie(Analytics.Types(self.data, begin, end).get(), suptitle="Распределение заявок по гарантийности\n в период c " + str(begin) + " по " +
                      str(end), title="Распределение заявок по гарантийности в период c " + str(begin) + " по " + str(end))
             autocomplete['types_begin'] = self.line_begin.text()
             autocomplete['types_end'] = self.line_end.text()
@@ -359,7 +364,7 @@ class SettingsBox(QGroupBox):
         layout.addWidget(button_settings)
         layout.addWidget(button_priority)
         layout.addWidget(label_client_counter)
-        label_version = QLabel("Версия 0.0.3 alpha")
+        label_version = QLabel("Версия 0.0.4")
         label_version.setAlignment(Qt.AlignRight)
         button_settings.clicked.connect(self.open_settings)
         button_priority.clicked.connect(self.open_priority)
@@ -379,7 +384,7 @@ class SettingsBox(QGroupBox):
         self.w.show()
 
 
-class Window(QWidget):
+class FileChoice(QWidget):
     def __init__(self):
         super().__init__()
         # wnd =  QWidget()
@@ -389,7 +394,7 @@ class Window(QWidget):
         self.input_1 = QLineEdit()
         self.input_1.setMaximumWidth(250)
         self.input_1.returnPressed.connect(self.get_text)
-
+        self.text1.setMinimumWidth(500)
         if autocomplete.get('main_window_path') is not None:
             self.input_1.setText(autocomplete['main_window_path'])
 
@@ -476,5 +481,5 @@ except FileNotFoundError:
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = Window()
+    window = FileChoice()
     sys.exit(app.exec())

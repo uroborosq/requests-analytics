@@ -215,7 +215,7 @@ class SimplePlots(QGroupBox):
 
     def find_provider_delay(self):
         Analytics.DelayProvider(self.data)
-        QMessageBox(text='Записано в файл!', title='Важное сообщение').exec()
+        QMessageBox(text='Записано в файл!').exec()
 
     def day_schedule(self):
         self.w = DayScheduleWindow(self.data)
@@ -241,7 +241,7 @@ class SimplePlots(QGroupBox):
 
     def repeats(self):
         Analytics.RequestRepeats(self.data)
-        QMessageBox(text='Записано в файл!', title='Важное сообщение').exec()
+        QMessageBox(text='Записано в файл!').exec()
 
 
 

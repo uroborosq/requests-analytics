@@ -3,7 +3,7 @@ import plots
 from Parser import Parser
 import datetime
 import files
-parser = Parser("5.xlsx", "TDSheet")
+parser = Parser("09.08.xlsx", "TDSheet")
 parser.parse()
 
 # b = Analytics.PlotRequestsByTime(parser.requests)
@@ -62,3 +62,6 @@ parser.parse()
 #      Analytics.Waiting(parser.requests).get(),
 #      Analytics.Done(parser.requests).get()]
 #                       )
+
+# повторы заявок
+Analytics.RequestRepeats(parser.requests)

@@ -315,11 +315,18 @@ class RequestRepeats(object):
         self.requests = {}
         file = open("Повторы.txt", 'w')
         for i in data.values():
-            with [i.model, i.address] as key:
-                if self.requests.get(key) is not None:
-                    pass
-                else:
-                    self.requests[key] = [[i.date_begin]]
+            key = (i.model, i.address)
+            if self.requests.get(key) is not None:
+                if len(self.requests[key]) == 1:
+                    self.requests[key].append([i.id, i.date_begin])
+                elif len(self.requests[key]) == 2:
+                    if datetime.today() - i.date_begin <= timedelta(45) and i.address.lower().find('ремзона') == -1 and i.address.lower().find('сц') == -1 and i.address.lower().find('сервис центр'):
+                        self.requests[key].append([i.id, i.date_begin])
+                        file.write('Модель: ' + i.model + ', адрес: ' + i.address + '\n')
+                        for it in self.requests[key]:
+                            file.write('Наряд-заказ: ' + it[0] + ', дата открытия: ' + str(it[1]) + '\n')
+            else:
+                self.requests[key] = [[i.id, i.date_begin]]
 
 
 class Priority(object):

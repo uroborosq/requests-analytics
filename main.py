@@ -1,10 +1,12 @@
 import datetime
 import json
 import sys
+import os
 
 from PyQt5.QtWidgets import QMainWindow, QWidget, QLabel, QLineEdit, QPushButton, QGridLayout, QVBoxLayout, \
     QFormLayout, QApplication, QMessageBox, QGroupBox
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIcon
 from openpyxl.utils import exceptions
 
 import Analytics
@@ -40,7 +42,7 @@ class PrioritySettingsWindow(QWidget):
         layout.addWidget(self.line)
         layout.addWidget(button_set)
         layout.addWidget(self.button_set_default)
-
+        self.setWindowIcon(QIcon(os.path.dirname(os.path.realpath(__file__)) + os.path.sep + '1.png'))
         self.setLayout(layout)
 
     def set_custom(self):
@@ -68,7 +70,7 @@ class DayScheduleWindow(QMainWindow):
         self.label_result = QLabel('')
         button_create_form.clicked.connect(self.create_form)
         self.line_date.returnPressed.connect(self.create_form)
-
+        self.setWindowIcon(QIcon(os.path.dirname(os.path.realpath(__file__)) + os.path.sep + '1.png'))
         self.layout.addWidget(label_info)
         self.layout.addWidget(self.line_date)
         self.layout.addWidget(button_create_form)
@@ -109,7 +111,7 @@ class ParserSettingsWindow(QMainWindow):
             for i in settings.values():
                 self.lines[j].setText(i)
                 j += 1
-
+        self.setWindowIcon(QIcon(os.path.dirname(os.path.realpath(__file__)) + os.path.sep + '1.png'))
         layout.addRow(self.tr('&Наряд заказ'), self.lines[0])
         layout.addRow(self.tr('&Дата поступления'), self.lines[1])
         layout.addRow(self.tr('&Дата закрытия'), self.lines[2])
@@ -171,6 +173,7 @@ class SimplePlots(QGroupBox):
         button_day_schedule = QPushButton("Форма для дневного отчета")
         button_warranty = QPushButton("Диаграмма про гарантию и вывод в файл")
         button_priority = QPushButton("Распределение приоритетов")
+        button_repeats = QPushButton("Найти повторы заявок")
 
         button_plot_three_years.clicked.connect(self.plot_three_years)
         button_warranty.clicked.connect(self.warranty)
@@ -180,7 +183,8 @@ class SimplePlots(QGroupBox):
         button_provider_delay.clicked.connect(self.find_provider_delay)
         button_day_schedule.clicked.connect(self.day_schedule)
         button_priority.clicked.connect(self.priority)
-
+        button_repeats.clicked.connect(self.repeats)
+        self.setWindowIcon(QIcon(os.path.dirname(os.path.realpath(__file__)) + os.path.sep + '1.png'))
         layout = QVBoxLayout()
         layout.addWidget(button_plot_three_years)
         layout.addWidget(button_pie_phases)
@@ -190,6 +194,7 @@ class SimplePlots(QGroupBox):
         layout.addWidget(button_day_schedule)
         layout.addWidget(button_warranty)
         layout.addWidget(button_priority)
+        layout.addWidget(button_repeats)
 
         self.setLayout(layout)
         self.w = 0
@@ -210,7 +215,7 @@ class SimplePlots(QGroupBox):
 
     def find_provider_delay(self):
         Analytics.DelayProvider(self.data)
-        QMessageBox(text='Записано в файл!').exec()
+        QMessageBox(text='Записано в файл!', title='Важное сообщение').exec()
 
     def day_schedule(self):
         self.w = DayScheduleWindow(self.data)
@@ -233,6 +238,11 @@ class SimplePlots(QGroupBox):
     def priority(self):
         plots.Pie(Analytics.Priority(self.data).get(), title='Распределение приоритетов в незакрытых заявках',
                   suptitle='Распределение приоритетов в незакрытых заявках на ' + str(datetime.datetime.today().date()))
+
+    def repeats(self):
+        Analytics.RequestRepeats(self.data)
+        QMessageBox(text='Записано в файл!', title='Важное сообщение').exec()
+
 
 
 class ManagersBox(QGroupBox):
@@ -263,7 +273,7 @@ class ManagersBox(QGroupBox):
         button_pie_managers.clicked.connect(self.pie_managers)
         self.line_managers_name.returnPressed.connect(self.pie_managers)
         self.line_managers_dates_end.returnPressed.connect(self.pie_managers)
-
+        self.setWindowIcon(QIcon(os.path.dirname(os.path.realpath(__file__)) + os.path.sep + '1.png'))
         layout.addWidget(label_managers_names)
         layout.addWidget(self.line_managers_name)
         layout.addWidget(label_dates_managers)
@@ -319,7 +329,7 @@ class TypesBox(QGroupBox):
 
         button_pie_managers = QPushButton("Построить диаграмму")
         button_pie_managers.clicked.connect(self.pie_types)
-
+        self.setWindowIcon(QIcon(os.path.dirname(os.path.realpath(__file__)) + os.path.sep + '1.png'))
         layout.addWidget(label_begin)
         layout.addWidget(self.line_begin)
         layout.addWidget(label_end)
@@ -355,6 +365,7 @@ class SettingsBox(QGroupBox):
     def __init__(self, data):
         super(SettingsBox, self).__init__('Прочее')
         layout = QVBoxLayout()
+        self.setWindowIcon(QIcon(os.path.dirname(os.path.realpath(__file__)) + os.path.sep + '1.png'))
         label_client_counter = QLabel()
 
         label_client_counter.setText(
@@ -364,7 +375,7 @@ class SettingsBox(QGroupBox):
         layout.addWidget(button_settings)
         layout.addWidget(button_priority)
         layout.addWidget(label_client_counter)
-        label_version = QLabel("Версия 0.0.4")
+        label_version = QLabel("Версия 0.0.5")
         label_version.setAlignment(Qt.AlignRight)
         button_settings.clicked.connect(self.open_settings)
         button_priority.clicked.connect(self.open_priority)
@@ -389,6 +400,7 @@ class FileChoice(QWidget):
         super().__init__()
         # wnd =  QWidget()
         self.layout = QVBoxLayout()
+        self.setWindowIcon(QIcon(os.path.dirname(os.path.realpath(__file__)) + os.path.sep + '1.png'))
         self.button = QPushButton("Старт")
         self.text1 = QLabel("Введите адрес файла формата xlsx")
         self.input_1 = QLineEdit()

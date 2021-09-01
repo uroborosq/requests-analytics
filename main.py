@@ -7,7 +7,6 @@ from PyQt5.QtWidgets import QMainWindow, QWidget, QLabel, QLineEdit, QPushButton
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 from openpyxl.utils import exceptions
-
 import Analytics
 import files
 import plots

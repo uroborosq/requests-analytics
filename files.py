@@ -40,7 +40,8 @@ class DaySchedule(object):
                 worksheet['D' + str(counter + 5)] = j[1]
                 tmp = ''
                 for k in j[0]:
-                    tmp += k + ' \n '
+                    if k is not None:
+                        tmp += k + ' \n '
                 tmp += j[2]
                 worksheet['C' + str(counter + 5)] = tmp
                 counter += 1

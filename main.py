@@ -358,7 +358,7 @@ class SettingsBox(QGroupBox):
         layout.addWidget(button_settings)
         layout.addWidget(button_priority)
         layout.addWidget(label_client_counter)
-        label_version = QLabel('version' + files.default_settings()[0]['version'])
+        label_version = QLabel('version ' + files.default_settings()[0]['version'])
         label_version.setAlignment(Qt.AlignRight)
         button_settings.clicked.connect(self.open_settings)
         button_priority.clicked.connect(self.open_priority)

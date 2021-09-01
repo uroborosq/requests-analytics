@@ -1,5 +1,4 @@
 from datetime import datetime
-import json
 from openpyxl import load_workbook
 
 import files
@@ -26,34 +25,10 @@ class Parser(object):
         self.lines_to_skip = 6
 
     def __determine_settings__(self):
-        try:
-            settings_file = open('.parser_settings.json', 'r')
-            self.set = json.load(settings_file)
-        except FileNotFoundError:
-            self.set = files.set_default()
-        except json.decoder.JSONDecodeError:
-            self.set = files.set_default()
+        self.set = files.get_settings()[2]
 
         if self.set.get('lines_to_skip') is not None:
             self.lines_to_skip = eval(self.set['lines_to_skip'])
-
-        for i in [
-            'id',
-            'date_begin',
-            'date_end',
-            'date_begin_working',
-            'status',
-            'phase',
-            'engineer',
-            'manager',
-            'type',
-            'priority',
-            'client',
-            'model',
-            'address'
-        ]:
-            if self.set.get(i) is None:
-                self.set[i] = files.return_dict()[i]
 
         for i in self.set:
             self.set[i] = __row_to_index__(self.set[i])

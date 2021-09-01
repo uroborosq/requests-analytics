@@ -1,5 +1,4 @@
 import datetime
-import json
 import sys
 import os
 
@@ -15,12 +14,6 @@ import plots
 from Parser import Parser
 
 
-def json_dump():
-    file = open(".autocomplete.json", 'w')
-    json.dump(autocomplete, file, indent=4)
-    file.close()
-
-
 class PrioritySettingsWindow(QWidget):
     def __init__(self):
         super().__init__()
@@ -29,14 +22,10 @@ class PrioritySettingsWindow(QWidget):
         button_set = QPushButton('Применить настройки')
         button_set.clicked.connect(self.set_custom)
         self.button_set_default = QPushButton('Установить настройки по умолчанию')
-        self.button_set_default.clicked.connect(files.set_default_priority)
+        self.button_set_default.clicked.connect(self.set_default)
         self.line.returnPressed.connect(self.set_custom)
-        try:
-            with open('.priority_settings.json', 'r') as file:
-                settings = json.load(file)
-        except FileNotFoundError or json.decoder.JSONDecodeError:
-            settings = files.set_default_priority()
-        for i in list(settings.keys())[:-1]:
+        settings = files.get_settings()[3]
+        for i in list(settings.keys()):
             self.line.setText(self.line.text() + ',' + i)
         self.line.setText(self.line.text()[1:])
         layout.addWidget(self.line)
@@ -47,13 +36,11 @@ class PrioritySettingsWindow(QWidget):
 
     def set_custom(self):
         keys = [i for i in self.line.text().split(',')]
-        settings = {}
         for i in keys:
-            settings[i] = []
-        settings['Неизвестный тип или не заполнено'] = []
-        file = open('.priority_settings.json', 'w')
-        json.dump(settings, file, indent=4)
-        file.close()
+            files.set_settings(3, i, [])
+
+    def set_default(self):
+        files.set_default(3)
 
 
 class DayScheduleWindow(QMainWindow):
@@ -82,13 +69,12 @@ class DayScheduleWindow(QMainWindow):
 
     def create_form(self):
         try:
-            autocomplete['day_schedule_date'] = self.line_date.text()
-            json_dump()
+            files.set_settings(1, 'day_schedule_date', self.line_date.text())
             date = datetime.datetime.strptime(self.line_date.text(), '%d.%m.%Y')
             output_file = files.DaySchedule(Analytics.DaySchedule(self.data, date).get(), date).get()
             self.label_result.setText('Форма сохранена в файл\n' + output_file)
-        except ValueError:
-            QMessageBox(text='Неверные данные').exec()
+        # except ValueError:
+        #     QMessageBox(text='Неверные данные').exec()
         except KeyError:
             QMessageBox(text='KeyError').exec()
 
@@ -98,19 +84,19 @@ class ParserSettingsWindow(QMainWindow):
         super().__init__()
         layout = QFormLayout()
 
-        self.lines = [QLineEdit() for _ in range(files.return_number())]
+        self.lines = [QLineEdit() for _ in range(files.len_dct(2))]
 
         button_set = QPushButton('Применить настройки')
         button_set.clicked.connect(self.set_custom)
         self.button_set_default = QPushButton('Установить настройки по умолчанию')
-        self.button_set_default.clicked.connect(files.set_default)
+        self.button_set_default.clicked.connect(self.set_default)
         self.lines[-1].returnPressed.connect(self.set_custom)
-        with open('.parser_settings.json', 'r') as file:
-            settings = json.load(file)
-            j = 0
-            for i in settings.values():
-                self.lines[j].setText(i)
-                j += 1
+
+        settings = files.get_settings()
+        j = 0
+        for i in settings[2].values():
+            self.lines[j].setText(i)
+            j += 1
         self.setWindowIcon(QIcon(os.path.dirname(os.path.realpath(__file__)) + os.path.sep + '1.png'))
         layout.addRow(self.tr('&Наряд заказ'), self.lines[0])
         layout.addRow(self.tr('&Дата поступления'), self.lines[1])
@@ -136,15 +122,10 @@ class ParserSettingsWindow(QMainWindow):
     def set_custom(self):
         try:
             if self.__check__():
-                settings = {}
                 j = 0
-                for i in files.set_default():
-                    settings[i] = self.lines[j].text()
+                for i in files.default_settings()[2]:
+                    files.set_settings(2, i, self.lines[j].text())
                     j += 1
-
-                file = open('.parser_settings.json', 'w')
-                json.dump(settings, file, indent=4)
-                file.close()
         except ValueError:
             QMessageBox(text='Неверные данные').exec()
         except KeyError:
@@ -159,6 +140,9 @@ class ParserSettingsWindow(QMainWindow):
         if self.lines[-1].text().isdigit():
             return True
         raise ValueError
+
+    def set_default(self):
+        files.set_default(2)
 
 
 class SimplePlots(QGroupBox):
@@ -224,9 +208,9 @@ class SimplePlots(QGroupBox):
 
     def warranty(self):
         plots.Pie(Analytics.Warranty(self.data).get(), title='Распределение незакрытых гарантийных заявок по срокам на'
-                                                   + str(datetime.datetime.today().date()),
+                                                             + str(datetime.datetime.today().date()),
                   suptitle='Распределение незакрытых гарантийных заявок по срокам\n на '
-                                                   + str(datetime.datetime.today().date()))
+                           + str(datetime.datetime.today().date()))
 
     def plot_donewaitrecieve(self):
         plots.DoneWaitReceive([
@@ -242,7 +226,6 @@ class SimplePlots(QGroupBox):
     def repeats(self):
         Analytics.RequestRepeats(self.data)
         QMessageBox(text='Записано в файл!').exec()
-
 
 
 class ManagersBox(QGroupBox):
@@ -297,13 +280,13 @@ class ManagersBox(QGroupBox):
 
             names = self.line_managers_name.text()
 
-            plots.Pie(Analytics.Managers(self.data, names, begin, end).get(), title='Распределение нагрузки на менеджеров',
-                     suptitle="Распределение нагрузки на менеджеров\n в период с " + str(begin) + " по " +
-                      str(end))
-            autocomplete['managers_names'] = self.line_managers_name.text()
-            autocomplete['managers_begin'] = self.line_managers_dates_begin.text()
-            autocomplete['managers_end'] = self.line_managers_dates_end.text()
-            json_dump()
+            plots.Pie(Analytics.Managers(self.data, names, begin, end).get(),
+                      title='Распределение нагрузки на менеджеров',
+                      suptitle="Распределение нагрузки на менеджеров\n в период с " + str(begin) + " по " +
+                               str(end))
+            files.set_settings(1, 'managers_names', self.line_managers_name.text())
+            files.set_settings(1, 'managers_begin', self.line_managers_dates_begin.text())
+            files.set_settings(1, 'managers_end', self.line_managers_dates_end.text())
         except ValueError:
             warn = QMessageBox()
             warn.setText("Данные введены некорректно")
@@ -350,11 +333,12 @@ class TypesBox(QGroupBox):
             else:
                 end = datetime.datetime.max.date()
 
-            plots.Pie(Analytics.Types(self.data, begin, end).get(), suptitle="Распределение заявок по гарантийности\n в период c " + str(begin) + " по " +
-                     str(end), title="Распределение заявок по гарантийности в период c " + str(begin) + " по " + str(end))
-            autocomplete['types_begin'] = self.line_begin.text()
-            autocomplete['types_end'] = self.line_end.text()
-            json_dump()
+            plots.Pie(Analytics.Types(self.data, begin, end).get(),
+                      suptitle="Распределение заявок по гарантийности\n в период c " + str(begin) + " по " +
+                               str(end),
+                      title="Распределение заявок по гарантийности в период c " + str(begin) + " по " + str(end))
+            files.set_settings(1, 'types_begin', self.line_begin.text())
+            files.set_settings(1, 'types_end', self.line_end.text())
         except ValueError:
             warn = QMessageBox()
             warn.setText("Данные введены некорректно")
@@ -375,7 +359,7 @@ class SettingsBox(QGroupBox):
         layout.addWidget(button_settings)
         layout.addWidget(button_priority)
         layout.addWidget(label_client_counter)
-        label_version = QLabel("Версия 0.0.5")
+        label_version = QLabel('version' + files.default_settings()[0]['version'])
         label_version.setAlignment(Qt.AlignRight)
         button_settings.clicked.connect(self.open_settings)
         button_priority.clicked.connect(self.open_priority)
@@ -383,6 +367,7 @@ class SettingsBox(QGroupBox):
         layout.addWidget(label_version)
 
         self.setLayout(layout)
+        self.w = 0
 
     def open_settings(self):
         self.w = ParserSettingsWindow()
@@ -399,6 +384,7 @@ class FileChoice(QWidget):
     def __init__(self):
         super().__init__()
         # wnd =  QWidget()
+        self.w = 0
         self.layout = QVBoxLayout()
         self.setWindowIcon(QIcon(os.path.dirname(os.path.realpath(__file__)) + os.path.sep + '1.png'))
         self.button = QPushButton("Старт")
@@ -428,8 +414,7 @@ class FileChoice(QWidget):
         self.label_parser.setText("Считывание данных...")
         if self.input_1.text() != '':
             try:
-                autocomplete['main_window_path'] = self.input_1.text()
-                json_dump()
+                files.set_settings(1, 'main_window_path', self.input_1.text())
                 parser = Parser(self.input_1.text(), 'TDSheet')
                 parser.parse()
                 self.widget = PlotChoice(parser.requests)
@@ -474,24 +459,8 @@ class PlotChoice(QMainWindow):
         self.setCentralWidget(self.wnd)
 
 
-try:
-    f = open('.autocomplete.json', 'r')
-    autocomplete = json.load(f)
-    f.close()
-except json.decoder.JSONDecodeError:
-    print("Warning: new file created")
-    f = open('.autocomplete.json', 'w')
-    autocomplete = {}
-    json.dump(autocomplete, f, indent=4)
-    f.close()
-except FileNotFoundError:
-    print("Warning: new file created")
-    f = open('.autocomplete.json', 'w')
-    autocomplete = {}
-    json.dump(autocomplete, f, indent=4)
-    f.close()
-
 if __name__ == "__main__":
+    autocomplete = files.get_settings()[1]
     app = QApplication(sys.argv)
     window = FileChoice()
     sys.exit(app.exec())

@@ -296,18 +296,17 @@ class ClientsCounter(object):
 
 class DaySchedule(object):
     def __init__(self, data, date):
-        self.engeenires = {}
+        self.request = {}
         for i in data.values():
             if i.begin_working != '':
                 if i.begin_working.date() == date.date():
-                    for j in i.engineer:
-                        if self.engeenires.get(j) is None:
-                            self.engeenires[j] = [[i.id, i.warranty]]
-                        else:
-                            self.engeenires[j].append([i.id, i.warranty])
+                    if self.request.get(i.id) is None:
+                        self.request[i.id] = [[i.engineer, i.warranty, i.address]]
+                    else:
+                        self.request[i.id].append([i.engineer, i.warranty, i.address])
 
     def get(self):
-        return self.engeenires
+        return self.request
 
 
 class RequestRepeats(object):
@@ -331,15 +330,8 @@ class RequestRepeats(object):
 
 class Priority(object):
     def __init__(self, data):
-        try:
-            file = open('.priority_settings.json', 'r')
-            self.requests = json.load(file)
-            file.close()
-        except FileNotFoundError:
-            self.requests = files.set_default_priority()
-        except json.decoder.JSONDecodeError:
-            self.requests = files.set_default_priority()
-
+        self.requests = files.get_settings()[3]
+        self.requests['Неизвестный тип или не заполнено'] = []
         file = open('Приоритеты.txt', 'w')
 
         for i in data.values():

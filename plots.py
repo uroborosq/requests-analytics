@@ -22,8 +22,8 @@ class PlotThreeYears(object):
 
         axes.plot(months[:stop + 1], list(data[0].values())[:stop + 1], linestyle='solid',
                   label=str(datetime.datetime.today().year), marker="o")
-        axes.plot(months, data[1].values(), linestyle='solid', label=str(datetime.datetime.today().year - 1)
-                  , marker="o")
+        axes.plot(months, data[1].values(), linestyle='solid', label=str(datetime.datetime.today().year - 1),
+                  marker="o")
         axes.plot(months, data[2].values(), linestyle='solid', label=str(datetime.datetime.today().year - 2),
                   marker="o")
         axes.set_ylabel('Количество поступивших, шт')
@@ -76,7 +76,7 @@ class DoneWaitReceive(object):
         axes.grid(True)
 
         axes.set_title(' Соотношение поступивших, незакрытых и закрытых заявок\n в ' +
-                                                   str(datetime.datetime.today().year) + ' году')
+                       str(datetime.datetime.today().year) + ' году')
 
         show()
 

@@ -42,7 +42,10 @@ class DaySchedule(object):
                 for k in j[0]:
                     if k is not None:
                         tmp += k + ' \n '
-                tmp += j[2]
+                if j[2] is None:
+                    tmp += 'Адрес не указан'
+                else:
+                    tmp += j[2]
                 worksheet['C' + str(counter + 5)] = tmp
                 counter += 1
         worksheet.row_dimensions[4].height = 40
@@ -81,7 +84,7 @@ class DaySchedule(object):
 def default_settings():
     return [
         {
-            "version": "0.0.6"
+            "version": "0.0.7"
         },
         {
 

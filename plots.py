@@ -3,7 +3,6 @@ import datetime
 from matplotlib import use
 from matplotlib.pyplot import subplots, show, text
 import matplotlib.dates as mdates
-
 use("Qt5Agg")
 
 months = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь",
@@ -90,7 +89,10 @@ class Pie(object):
                         str("%.1f" % (data[labels[i]] / sum(data.values()) * 100)) + '%)'
         explode = []
         for i in data.values():
-            explode.append(0.000025 / (i / sum(data.values())))
+            if sum(data.values()) == 0 or i == 0:
+                explode.append(0)
+            else:
+                explode.append(0.000025 / (i / sum(data.values())))
 
         axes.pie(data.values(), labels=labels, explode=explode)
 

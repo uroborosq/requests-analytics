@@ -84,7 +84,7 @@ class DaySchedule(object):
 def default_settings():
     return [
         {
-            "version": "0.0.7"
+            "version": "0.0.8"
         },
         {
 

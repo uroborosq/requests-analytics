@@ -329,7 +329,7 @@ class PlotChoice(QWidget):
             builder.add_time_period(begin, end)
             builder.add_manager(manager)
 
-            plots.PlotAverageTime(analytics.AverageTime(self.data).get())
+            plots.PlotAverageTime(analytics.AverageTime(self.data, manager, ).get())
 
     def done_wait_receive(self):
         plots.DoneWaitReceive([

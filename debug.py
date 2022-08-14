@@ -1,6 +1,6 @@
-import Analytics
+import analytics
 import plots
-from Parser import Parser
+from parser import Parser
 import datetime
 import files
 parser = Parser("09.08.xlsx", "TDSheet")
@@ -64,4 +64,4 @@ parser.parse()
 #                       )
 
 # повторы заявок
-Analytics.RequestRepeats(parser.requests)
+analytics.RequestRepeats(parser.requests)

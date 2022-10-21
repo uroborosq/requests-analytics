@@ -44,9 +44,6 @@ class Parser(object):
             if self.requests.get(i[self.set['id']].value) is not None:
                 self.requests[i[self.set['id']].value].add_engineer(i[self.set['engineer']].value)
             elif i[self.set['date_end']].value is not None and\
-                    datetime.strptime(i[self.set['date_end']].value, '%d.%m.%Y %H:%M:%S').year < 2018:
-                error_output.write(i[self.set['id']].value + " - неправильный год\n")
-            elif i[self.set['date_end']].value is not None and\
                     datetime.strptime(i[self.set['date_end']].value, '%d.%m.%Y %H:%M:%S') > datetime.today():
                 error_output.write(i[self.set['id']].value + " - дата закрытия превышает сегодняшнюю\n")
             else:

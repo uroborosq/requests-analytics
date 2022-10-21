@@ -2,38 +2,95 @@ import datetime
 import sys
 import os
 
-from PyQt6.QtWidgets import QMainWindow, QWidget, QLabel, QLineEdit, QPushButton, QGridLayout, QVBoxLayout, \
+from PyQt5.QtWidgets import QMainWindow, QWidget, QLabel, QLineEdit, QPushButton, QGridLayout, QVBoxLayout, \
     QFormLayout, QApplication, QMessageBox, QGroupBox, QCheckBox, QCalendarWidget, QListWidget, QFileDialog, QDialog, \
-    QListView, QListWidgetItem, QComboBox, QDateEdit
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QIcon
+    QListView, QListWidgetItem, QComboBox, QDateEdit, QSpinBox, QHBoxLayout, QDateTimeEdit
+from PyQt5.QtGui import QIcon
 from openpyxl.utils import exceptions
 import analytics
 import files
 import plots
 from parser import Parser
-from analytic_filters import filter
-from title_builder import DefaultTitleBuilder
+from title_builder import TitleBuilder, DefaultTitleBuilder
+
+
+class ThreeYearsChooserBuilder:
+    def __init__(self):
+        self.widget = QDialog()
+        layout = QVBoxLayout()
+        self.first_year = QSpinBox()
+        self.second_year = QSpinBox()
+        self.third_year = QSpinBox()
+        self.first_year.setMinimum(min_date.year)
+        self.second_year.setMinimum(min_date.year)
+        self.third_year.setMinimum(min_date.year)
+        self.first_year.setMaximum(datetime.date.today().year)
+        self.second_year.setMaximum(datetime.date.today().year)
+        self.third_year.setMaximum(datetime.date.today().year)
+
+        self.first_year.setValue(datetime.date.today().year)
+        self.second_year.setValue(datetime.date.today().year - 1)
+        self.third_year.setValue(datetime.date.today().year - 2)
+
+        button_confirm = QPushButton('Применить')
+        button_confirm.clicked.connect(self.confirm)
+
+        information_label = QLabel('Выберите года для сравнения')
+
+        years_group = QGroupBox()
+        years_group_layout = QHBoxLayout()
+        years_group_layout.addWidget(self.first_year)
+        years_group_layout.addWidget(self.second_year)
+        years_group_layout.addWidget(self.third_year)
+        years_group.setLayout(years_group_layout)
+
+        self.checkbox_exclude_requests = QCheckBox("Исключить внутренние заявки")
+
+
+        layout.addWidget(information_label)
+        layout.addWidget(years_group)
+        layout.addWidget(self.checkbox_exclude_requests)
+        layout.addWidget(button_confirm)
+
+        self.is_submitted = False
+        self.widget.setLayout(layout)
+
+    def confirm(self):
+        self.widget.close()
+        self.is_submitted = True
+
+    def build(self):
+        return self.widget
+
+    def get_years(self):
+        return self.first_year.value(), self.second_year.value(), self.third_year.value()
+
+    def get_excluding_requests(self):
+        return self.checkbox_exclude_requests.isChecked()
 
 
 class DataAndManagerChooser(QDialog):
-    def __init__(self, data_begin_enable: bool, data_end_enable: bool, manager_enable: bool):
+    def __init__(self, data_begin_enable: bool, data_end_enable: bool, manager_enable, requests_type_enable=True):
         super(DataAndManagerChooser, self).__init__()
         self.layout = QGridLayout()
-
+        self.data_begin_checkbox = None
+        self.data_end_checkbox = None
         if data_begin_enable:
             self.data_begin_label = QLabel("Выберите начало периода")
-            self.data_begin_checkbox = QCheckBox()
-            self.data_begin_calendar = QCalendarWidget()
-
+            self.data_begin_checkbox = QCheckBox('Учитывать дату')
+            self.data_begin_calendar = QDateTimeEdit(datetime.datetime.today())
+            self.data_begin_calendar.setDisplayFormat("dd.MM.yyyy")
+            self.data_begin_checkbox.setChecked(True)
             self.layout.addWidget(self.data_begin_label, 0, 0)
             self.layout.addWidget(self.data_begin_calendar, 1, 0)
             self.layout.addWidget(self.data_begin_checkbox, 2, 0)
 
         if data_end_enable:
             self.data_end_label = QLabel("Выберите конец периода")
-            self.data_end_checkbox = QCheckBox()
-            self.data_end_calendar = QCalendarWidget()
+            self.data_end_checkbox = QCheckBox('Учитывать дату')
+            self.data_end_checkbox.setChecked(True)
+            self.data_end_calendar = QDateTimeEdit(datetime.datetime.today())
+            self.data_end_calendar.setDisplayFormat("dd.MM.yyyy")
             self.layout.addWidget(self.data_end_label, 0, 1)
             self.layout.addWidget(self.data_end_calendar, 1, 1)
             self.layout.addWidget(self.data_end_checkbox, 2, 1)
@@ -45,6 +102,13 @@ class DataAndManagerChooser(QDialog):
                 self.manager_chooser.addItem(i)
 
             self.layout.addWidget(self.manager_chooser)
+
+        if requests_type_enable:
+            self.requests_type_checkbox = QCheckBox(
+                "Исключить внутренние заявки")
+            self.requests_type_checkbox.setChecked(True)
+            self.layout.addWidget(self.requests_type_checkbox)
+
         self.is_submitted = False
         self.data_submit_button = QPushButton("Применить")
         self.data_submit_button.clicked.connect(self.submit)
@@ -54,17 +118,23 @@ class DataAndManagerChooser(QDialog):
     def get_date_begin(self):
         if self.data_begin_checkbox is not None:
             if self.data_begin_checkbox.isChecked():
-                return self.data_begin_calendar.selectedDate().toPyDate()
-        return datetime.date.min
+                return self.data_begin_calendar.date().toPyDate()
+        return min_date
 
     def get_date_end(self):
         if self.data_end_checkbox is not None:
             if self.data_end_checkbox.isChecked():
-                return self.data_end_calendar.selectedDate().toPyDate()
-        return datetime.date.max
+                return self.data_end_calendar.date().toPyDate()
+        return datetime.date.today()
 
     def get_manager(self):
         return self.manager_chooser.currentText()
+
+    def get_request_excluding_status(self):
+        if self.requests_type_checkbox is not None:
+            return self.requests_type_checkbox.isChecked()
+        else:
+            return False
 
     def submit(self):
         self.is_submitted = True
@@ -78,7 +148,8 @@ class PrioritySettingsWindow(QWidget):
         self.line = QLineEdit()
         button_set = QPushButton('Применить настройки')
         button_set.clicked.connect(self.set_custom)
-        self.button_set_default = QPushButton('Установить настройки по умолчанию')
+        self.button_set_default = QPushButton(
+            'Установить настройки по умолчанию')
         self.button_set_default.clicked.connect(self.set_default)
         self.line.returnPressed.connect(self.set_custom)
         settings = files.get_settings()[3]
@@ -88,7 +159,8 @@ class PrioritySettingsWindow(QWidget):
         layout.addWidget(self.line)
         layout.addWidget(button_set)
         layout.addWidget(self.button_set_default)
-        self.setWindowIcon(QIcon(os.path.dirname(os.path.realpath(__file__)) + os.path.sep + '1.png'))
+        self.setWindowIcon(QIcon(os.path.dirname(
+            os.path.realpath(__file__)) + os.path.sep + '1.png'))
         self.setLayout(layout)
 
     def set_custom(self):
@@ -107,14 +179,15 @@ class DayScheduleWindow(QWidget):
         self.layout = QGridLayout()
         button_create_form = QPushButton("Сгенерировать форму")
         label_info = QLabel("Введите дату в формате Д.М.Г(21.04.2019)")
-        self.line_date = QLineEdit()
+        self.line_date = QDateTimeEdit(datetime.datetime.today())
+        self.line_date.setDisplayFormat("dd.MM.yyyy")
         if autocomplete.get('day_schedule_date') is not None:
             self.line_date.setText(autocomplete['day_schedule_date'])
 
         self.label_result = QLabel('')
         button_create_form.clicked.connect(self.create_form)
-        self.line_date.returnPressed.connect(self.create_form)
-        self.setWindowIcon(QIcon(os.path.dirname(os.path.realpath(__file__)) + os.path.sep + '1.png'))
+        self.setWindowIcon(QIcon(os.path.dirname(
+            os.path.realpath(__file__)) + os.path.sep + '1.png'))
         self.layout.addWidget(label_info)
         self.layout.addWidget(self.line_date)
         self.layout.addWidget(button_create_form)
@@ -125,11 +198,14 @@ class DayScheduleWindow(QWidget):
     def create_form(self):
         try:
             files.set_settings(1, 'day_schedule_date', self.line_date.text())
-            date = datetime.datetime.strptime(self.line_date.text(), '%d.%m.%Y')
-            output_file = files.DaySchedule(analytics.DaySchedule(self.data, date).get(), date).get()
+            date = datetime.datetime.strptime(
+                self.line_date.text(), '%d.%m.%Y')
+            output_file = files.DaySchedule(
+                analytics.DaySchedule(self.data, date).get(), date).get()
             self.label_result.setText('Форма сохранена в файл\n' + output_file)
         except ValueError as e:
-            QMessageBox(text=f"Неверные данные.\n Текст для отладки: {e.args}").exec()
+            QMessageBox(
+                text=f"Неверные данные.\n Текст для отладки: {e.args}").exec()
         except KeyError:
             QMessageBox(text='KeyError').exec()
 
@@ -143,7 +219,8 @@ class ParserSettingsWindow(QWidget):
 
         button_set = QPushButton('Применить настройки')
         button_set.clicked.connect(self.set_custom)
-        self.button_set_default = QPushButton('Установить настройки по умолчанию')
+        self.button_set_default = QPushButton(
+            'Установить настройки по умолчанию')
         self.button_set_default.clicked.connect(self.set_default)
         self.lines[-1].returnPressed.connect(self.set_custom)
 
@@ -152,7 +229,8 @@ class ParserSettingsWindow(QWidget):
         for i in settings[2].values():
             self.lines[j].setText(i)
             j += 1
-        self.setWindowIcon(QIcon(os.path.dirname(os.path.realpath(__file__)) + os.path.sep + '1.png'))
+        self.setWindowIcon(QIcon(os.path.dirname(
+            os.path.realpath(__file__)) + os.path.sep + '1.png'))
         layout.addRow(self.tr('&Наряд заказ'), self.lines[0])
         layout.addRow(self.tr('&Дата поступления'), self.lines[1])
         layout.addRow(self.tr('&Дата закрытия'), self.lines[2])
@@ -201,12 +279,10 @@ class ParserSettingsWindow(QWidget):
 class FileChoice(QWidget):
     def __init__(self):
         super().__init__()
-        self.w = 0
         self.layout = QVBoxLayout()
         # self.file = QFileDialog()
         self.button = QPushButton("Старт")
         button_settings_parser = QPushButton("Настройки парсера")
-
         self.text1 = QLabel("Введите адрес файла формата xlsx")
         self.input_1 = QLineEdit()
         self.input_1.returnPressed.connect(self.get_text)
@@ -236,6 +312,8 @@ class FileChoice(QWidget):
                 parser.parse()
                 global managers
                 managers = analytics.Managers(parser.requests).get()
+                global min_date
+                min_date = analytics.find_min_date(parser.requests)
                 self.widget = PlotChoice(parser.requests)
                 self.widget.setWindowTitle("Выбор графиков")
                 self.widget.show()
@@ -262,6 +340,17 @@ class FileChoice(QWidget):
         self.w.show()
 
 
+def __call_dialog_and_fetch_data__(date_begin_enable, date_end_enable, manager_enable, excluding_requests):
+    dialog = DataAndManagerChooser(
+        date_begin_enable, date_end_enable, manager_enable, excluding_requests)
+    dialog.exec()
+
+    if dialog.is_submitted:
+        return True, dialog.get_date_begin(), dialog.get_date_end(), dialog.get_manager(), dialog.get_request_excluding_status()
+    else:
+        return [False, 0, 0, 0, False]
+
+
 class PlotChoice(QWidget):
     def __init__(self, arr):
         super().__init__()
@@ -271,21 +360,24 @@ class PlotChoice(QWidget):
         button_three_years = QPushButton("График про три года")
         button_phases = QPushButton("Диаграмма про фазы")
         button_average_time = QPushButton("График про среднее время")
-        button_done_wait_received = QPushButton("Поступившие, закрытые и не закрытые")
-        button_provider_delay = QPushButton("Вывести в файл просрочки поставщика")
+        button_done_wait_received = QPushButton(
+            "Поступившие, закрытые и не закрытые")
+        button_provider_delay = QPushButton(
+            "Вывести в файл просрочки поставщика")
         button_daily_scheluder = QPushButton("Форма для дневного отчета")
         button_warranty = QPushButton("Диаграмма про гарантию и вывод в файл")
         button_priorities = QPushButton("Распределение приоритетов")
         button_repeats = QPushButton("Найти повторы заявок")
-        button_settings_priorities = QPushButton("Настройки диаграммы приоритетов")
+        button_settings_priorities = QPushButton(
+            "Настройки диаграммы приоритетов")
         button_types = QPushButton("Распределение заявок по гарантийности")
 
         label_clients_counter = QLabel('Клиентов за текущий год насчитано: ' +
                                        str(analytics.ClientsCounter(self.data).get()))
-        label_version = QLabel('version ' + files.default_settings()[0]['version'])
+        label_version = QLabel(
+            'version ' + files.default_settings()[0]['version'])
 
         layout.addWidget(button_three_years)
-        layout.addWidget(button_phases)
         layout.addWidget(button_phases)
         layout.addWidget(button_average_time)
         layout.addWidget(button_done_wait_received)
@@ -299,44 +391,68 @@ class PlotChoice(QWidget):
         layout.addWidget(label_clients_counter)
         layout.addWidget(label_version)
 
+        button_three_years.clicked.connect(self.three_years)
+        button_phases.clicked.connect(self.phases)
+        button_done_wait_received.clicked.connect(self.done_wait_receive)
+        button_average_time.clicked.connect(self.average_time)
+        button_daily_scheluder.clicked.connect(self.daily_scheduler)
+        button_warranty.clicked.connect(self.warranty)
+        button_priorities.clicked.connect(self.priorities)
+        button_repeats.clicked.connect(self.repeats)
+        button_settings_priorities.clicked.connect(self.settings_priorities)
         button_types.clicked.connect(self.types)
+        button_provider_delay.clicked.connect(self.provider_delay)
 
         self.setLayout(layout)
 
-
     def three_years(self):
-        plots.PlotThreeYears([
-            analytics.Received(self.data, datetime.datetime.today().year, 'month').get(),
-            analytics.Received(self.data, datetime.datetime.today().year - 1, 'month').get(),
-            analytics.Received(self.data, datetime.datetime.today().year - 2, 'month').get()
-        ])
+        self.years_window = ThreeYearsChooserBuilder()
+        self.years_window.widget.exec()
+
+        if self.years_window.is_submitted:
+            first_year, second_year, third_year = self.years_window.get_years()
+            is_exclude = self.years_window.get_excluding_requests()
+            plots.PlotThreeYears([
+                analytics.Received(self.data, 'month', datetime.date(
+                    first_year, 1, 1), datetime.date(first_year, 12, 31), 'Все', is_exclude).get(),
+                analytics.Received(self.data, 'month', datetime.date(second_year, 1, 1), datetime.date(second_year, 12, 31),
+                                   "Все", is_exclude).get(),
+                analytics.Received(self.data, 'month', datetime.date(third_year, 1, 1), datetime.date(third_year, 12, 31),
+                                   "Все", is_exclude).get()
+            ], first_year, second_year, third_year)
 
     def phases(self):
-        plots.Pie(analytics.Phases(self.data).get(), title='Фазы незакрытых заявок',
-                  suptitle="Фазы незакрытых заявок" + '. Отчет сформирован ' + str(datetime.datetime.today().date()))
+        is_submitted, begin, end, manager, excluding_status = __call_dialog_and_fetch_data__(
+            True, False, True, True)
+        if is_submitted:
+            title = DefaultTitleBuilder(
+                "Распределение незакрытых заявок по фазам", begin, end, manager).build()
+            plots.Pie(analytics.Phases(self.data, begin, manager, excluding_status).get(), title='Фазы незакрытых заявок',
+                      suptitle=title)
 
     def average_time(self):
-        dialog = DataAndManagerChooser(True, True, True)
-        dialog.exec()
-
-        if dialog.is_submitted:
-            begin = dialog.get_date_begin()
-            end = dialog.get_date_end()
-            manager = dialog.get_manager()
-
-            builder = DefaultTitleBuilder()
-            builder.join("Cреднее время закрытия заявок\n")
-            builder.add_time_period(begin, end)
-            builder.add_manager(manager)
-
-            plots.PlotAverageTime(analytics.AverageTime(self.data, manager, ).get())
+        is_submitted, begin, end, manager, excluding_status = __call_dialog_and_fetch_data__(
+            True, True, True, True)
+        if is_submitted:
+            title = DefaultTitleBuilder(
+                "Среднее время выполнения заявок", begin, end, manager).build()
+            plots.PlotAverageTime(analytics.AverageTime(
+                self.data, manager, begin, end, excluding_status).get(), title)
 
     def done_wait_receive(self):
-        plots.DoneWaitReceive([
-            analytics.Received(self.data, datetime.datetime.today().year, 'week').get(),
-            analytics.Waiting(self.data).get(),
-            analytics.Done(self.data).get()
-        ])
+        is_submitted, begin, end, manager, excluding_status = __call_dialog_and_fetch_data__(
+            True, True, True, True)
+        if is_submitted:
+            title = DefaultTitleBuilder("Сравнение поступивших, выполненных и ожидающих заявок", begin, end,
+                                        manager).build()
+            plots.DoneWaitReceive([
+                analytics.Received(self.data, 'week', begin,
+                                   end, manager, excluding_status).get(),
+                analytics.Waiting(self.data, begin, end,
+                                  manager, 'week', excluding_status).get(),
+                analytics.Done(self.data, begin, end, manager, excluding_status).get()
+            ],
+                title)
 
     def provider_delay(self):
         analytics.DelayProvider(self.data)
@@ -348,36 +464,35 @@ class PlotChoice(QWidget):
         self.w.show()
 
     def warranty(self):
-        plots.Pie(analytics.Warranty(self.data).get(), title='Распределение незакрытых гарантийных заявок по срокам на'
-                                                             + str(datetime.datetime.today().date()),
-                  suptitle='Распределение незакрытых гарантийных заявок по срокам\n на '
-                           + str(datetime.datetime.today().date()))
+        is_submitted, begin, end, manager = __call_dialog_and_fetch_data__(
+            True, False, True, False)
+        if is_submitted:
+            title = DefaultTitleBuilder(
+                "Распределение незакрытых гарантийных заявок", begin, end, manager).build()
+            plots.Pie(analytics.Warranty(self.data, begin, manager).get(),
+                      title,
+                      title)
 
     def priorities(self):
-        plots.Pie(analytics.Priority(self.data).get(), title='Распределение приоритетов в незакрытых заявках',
-                  suptitle='Распределение приоритетов в незакрытых заявках на ' + str(datetime.datetime.today().date()))
+        is_submitted, begin, end, manager, excluding_status = __call_dialog_and_fetch_data__(
+            True, False, True, True)
+        if is_submitted:
+            title = DefaultTitleBuilder(
+                "Распределение приоритетов в незакрытых заявках", begin, end, manager).build()
+            plots.Pie(analytics.Priority(self.data, begin, manager, excluding_status).get(),
+                      title,
+                      title)
 
     def repeats(self):
         analytics.RequestRepeats(self.data)
         QMessageBox(text='Записано в файл!').exec()
 
     def types(self):
-        dialog = DataAndManagerChooser(data_begin_enable=True,
-                                       data_end_enable=True,
-                                       manager_enable=True)
-        dialog.exec()
-
-        if dialog.is_submitted:
-            begin = dialog.get_date_begin()
-            end = dialog.get_date_end()
-            manager = dialog.get_manager()
-
-            builder = DefaultTitleBuilder()
-            builder.join("Распределение заявок по гарантийности\n")
-            builder.add_time_period(begin, end)
-            builder.add_manager(manager)
-            title = builder.build()
-
+        is_submitted, begin, end, manager, excluding_status = __call_dialog_and_fetch_data__(
+            True, True, True, False)
+        if is_submitted:
+            title = DefaultTitleBuilder(
+                "Распределение заявок по гарантийности", begin, end, manager).build()
             plots.Pie(analytics.Types(self.data, begin, end, manager).get(),
                       suptitle=title,
                       title=title)

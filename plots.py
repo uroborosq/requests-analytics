@@ -1,16 +1,16 @@
 import datetime
 
 from matplotlib import use
-from matplotlib.pyplot import subplots, show, text
+from matplotlib.pyplot import subplots, show, text, xticks
 import matplotlib.dates as mdates
-use("Qt5Agg")
+use("QtAgg")
 
 months = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь",
           "Ноябрь", "Декабрь"]
 
 
 class PlotThreeYears(object):
-    def __init__(self, data):
+    def __init__(self, data, first_year, second_year, third_year):
         fig, axes = subplots(nrows=1, ncols=1, num="Поступившие заявки на " + str(datetime.datetime.today().date())
                                                    + ". Сравнение текущего года с 2-мя предыдущими.")
         stop = 12
@@ -20,10 +20,10 @@ class PlotThreeYears(object):
                 break
 
         axes.plot(months[:stop + 1], list(data[0].values())[:stop + 1], linestyle='solid',
-                  label=str(datetime.datetime.today().year), marker="o")
-        axes.plot(months, data[1].values(), linestyle='solid', label=str(datetime.datetime.today().year - 1),
+                  label=first_year, marker="o")
+        axes.plot(months, data[1].values(), linestyle='solid', label=second_year,
                   marker="o")
-        axes.plot(months, data[2].values(), linestyle='solid', label=str(datetime.datetime.today().year - 2),
+        axes.plot(months, data[2].values(), linestyle='solid', label=third_year,
                   marker="o")
         axes.set_ylabel('Количество поступивших, шт')
         axes.set_xlabel('Время, месяцы')
@@ -31,30 +31,29 @@ class PlotThreeYears(object):
                        + ".\nСравнение текущего года с 2-мя предыдущими.")
         axes.legend()
         axes.grid(True)
-
+        xticks(rotation=45, ha='right')
         show()
 
 
 class PlotAverageTime(object):
-    def __init__(self, array):
+    def __init__(self, array: dict, title: str):
         fig, axes = subplots(nrows=1, ncols=1, num='Скорость закрытия заявок')
 
-        axes.plot(months[:len(array[0])], array[0].values(), linestyle='solid', marker='o')
-        axes.set_title('Скорость закрытия заявок. Отчет сформирован ' + str(datetime.datetime.today().date()))
+        axes.plot(array.keys(), array.values(), marker='o')
 
-        for i in array[0].keys():
-            axes.annotate("  " + str(array[0][i]) + " дней", [months[i.month - 1], array[0][i]])
+        for i in array.keys():
+            axes.annotate("  " + str(array[i]) + " дней", [i, array[i]])
+        axes.set_title(title)
         axes.set_ylabel('Средний срок закрытия, дни')
         axes.set_xlabel('Время, месяцы')
+        xticks(rotation=45, ha='right')
         axes.grid(True)
         show()
 
 
 class DoneWaitReceive(object):
-    def __init__(self, data):
-        fig, axes = subplots(nrows=1, ncols=1, num='Соотношение поступивших, незакрытых и закрытых заявок в ' +
-                                                   str(datetime.datetime.today().year) + ' году')
-
+    def __init__(self, data, title):
+        fig, axes = subplots(nrows=1, ncols=1, num=title)
         stop = len(data[0])
 
         for i in reversed(data[0].values()):
@@ -69,34 +68,38 @@ class DoneWaitReceive(object):
         axes.xaxis.set_major_locator(mdates.MonthLocator(interval=1))
         axes.xaxis.set_major_formatter(mdates.DateFormatter('%m'))
 
-        axes.xaxis.set_minor_locator(mdates.WeekdayLocator(byweekday=6, interval=1))
+        #axes.xaxis.set_minor_locator(mdates.WeekdayLocator(byweekday=6, interval=1))
 
         axes.legend()
         axes.grid(True)
 
-        axes.set_title(' Соотношение поступивших, незакрытых и закрытых заявок\n в ' +
-                       str(datetime.datetime.today().year) + ' году')
+        axes.set_title(title)
 
         show()
 
 
 class Pie(object):
-    def __init__(self, data, title, suptitle):
+    def __init__(self, data: dict, title: str, suptitle: str):
         fig, axes = subplots(nrows=1, ncols=1, num=title)
-        labels = list(data.keys())
-        for i in range(len(labels)):
-            labels[i] = labels[i] + ": " + str(data[labels[i]]) + " шт" + '(' + \
-                        str("%.1f" % (data[labels[i]] / sum(data.values()) * 100)) + '%)'
-        explode = []
-        for i in data.values():
-            if sum(data.values()) == 0 or i == 0:
-                explode.append(0)
-            else:
-                explode.append(0.000025 / (i / sum(data.values())))
 
-        axes.pie(data.values(), labels=labels, explode=explode)
+        if sum(data.values()) == 0:
+            axes.pie([1], colors=['white'])
+            text(0, -1.25, "Заявок с данными параметрами не обнаружено", fontsize='x-large', ha='center')
+        else:
+            labels = list(data.keys())
+            for i in range(len(labels)):
+                labels[i] = labels[i] + ": " + str(data[labels[i]]) + " шт" + '(' + \
+                            str("%.1f" % (data[labels[i]] / sum(data.values()) * 100)) + '%)'
+            explode = []
+            for i in data.values():
+                if sum(data.values()) == 0 or i == 0:
+                    explode.append(0)
+                else:
+                    explode.append(0.000025 / (i / sum(data.values())))
 
-        axes.axis('equal')
-        text(0, -1.25, 'Всего заявок:' + str(sum(data.values())), fontsize='x-large', ha='center')
-        fig.suptitle(suptitle)
+            axes.pie(data.values(), labels=labels, explode=explode)
+
+            axes.axis('equal')
+            text(0, -1.25, 'Всего заявок:' + str(sum(data.values())), fontsize='x-large', ha='center')
+            fig.suptitle(suptitle)
         show()

@@ -25,7 +25,7 @@ class TitleBuilder:
             self.__string__ += f"\n{manager}"
 
     def add_excluding(self):
-        self.__string__ += "\n Внутренние заявки исключены"
+        self.__string__ += ", внутренние заявки исключены"
 
     def build(self):
         return self.__string__

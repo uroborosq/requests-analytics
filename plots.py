@@ -1,7 +1,7 @@
 import datetime
 
-from matplotlib import use
-from matplotlib.pyplot import subplots, show, text, xticks, rcParams
+from matplotlib import use, rcParams, pyplot as plt
+from matplotlib.pyplot import subplots, show, text, xticks
 import matplotlib.dates as mdates
 use("QtAgg")
 
@@ -12,13 +12,12 @@ months = ["Январь", "Февраль", "Март", "Апрель", "Май"
 class PlotThreeYears(object):
     def __init__(self, data, first_year, second_year, third_year):
         fig, axes = subplots(nrows=1, ncols=1, num="Поступившие заявки на " + str(datetime.datetime.today().date())
-                                                   + ". Сравнение текущего года с 2-мя предыдущими.")
+                                                   + ". Сравнение 3-х лет.")
         stop = 12
         for i in reversed(data[0].keys()):
             if data[0][i] != 0:
                 stop = i.month - 1
                 break
-        rcParams.update({'font.size': 8})
         axes.plot(months[:stop + 1], list(data[0].values())[:stop + 1], linestyle='solid',
                   label=first_year, marker="o")
         axes.plot(months, data[1].values(), linestyle='solid', label=second_year,
@@ -28,7 +27,7 @@ class PlotThreeYears(object):
         axes.set_ylabel('Количество поступивших, шт')
         axes.set_xlabel('Время, месяцы')
         axes.set_title("Поступившие заявки на " + str(datetime.datetime.today().date())
-                       + ".\nСравнение текущего года с 2-мя предыдущими.")
+                       + ".\nСравнение 3-х лет")
         axes.legend()
         axes.grid(True)
         xticks(rotation=45, ha='right')
@@ -38,9 +37,7 @@ class PlotThreeYears(object):
 class PlotAverageTime(object):
     def __init__(self, array: dict, title: str):
         fig, axes = subplots(nrows=1, ncols=1, num='Скорость закрытия заявок')
-
         axes.plot(array.keys(), array.values(), marker='o')
-        rcParams.update({'font.size': 8})
 
         for i in array.keys():
             axes.annotate("  " + str(array[i]) + " дней", [i, array[i]])
@@ -66,7 +63,7 @@ class DoneWaitReceive(object):
         axes.plot(list(data[0].keys())[:stop + 1], list(data[0].values())[:stop + 1], label='Поступившие', marker='o')
         axes.plot(list(data[1].keys())[:stop + 1], list(data[1].values())[:stop + 1], label='Незакрытые', marker='o')
         axes.plot(list(data[2].keys())[:stop + 1], list(data[2].values())[:stop + 1], label='Закрытые', marker='o')
-
+        
         axes.xaxis.set_major_locator(mdates.MonthLocator(interval=1))
         axes.xaxis.set_major_formatter(mdates.DateFormatter('%m'))
 

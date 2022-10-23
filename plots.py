@@ -12,7 +12,8 @@ months = ["Январь", "Февраль", "Март", "Апрель", "Май"
 class PlotThreeYears(object):
     def __init__(self, data, first_year, second_year, third_year):
         fig, axes = subplots(nrows=1, ncols=1, num="Поступившие заявки на " + str(datetime.datetime.today().date())
-                                                   + ". Сравнение 3-х лет.")
+        rcParams.update({'font.size': 8})
+        + ". Сравнение 3-х лет.")
         stop = 12
         for i in reversed(data[0].keys()):
             if data[0][i] != 0:
@@ -38,6 +39,7 @@ class PlotAverageTime(object):
     def __init__(self, array: dict, title: str):
         fig, axes = subplots(nrows=1, ncols=1, num='Скорость закрытия заявок')
         axes.plot(array.keys(), array.values(), marker='o')
+        rcParams.update({'font.size': 8})
 
         for i in array.keys():
             axes.annotate("  " + str(array[i]) + " дней", [i, array[i]])
@@ -78,6 +80,7 @@ class DoneWaitReceive(object):
 class Pie(object):
     def __init__(self, data: dict, title: str, suptitle: str):
         fig, axes = subplots(nrows=1, ncols=1, num=title)
+        rcParams.update({'font.size': 8})
 
         if sum(data.values()) == 0:
             axes.pie([1], colors=['white'])

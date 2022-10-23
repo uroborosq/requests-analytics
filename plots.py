@@ -1,7 +1,7 @@
 import datetime
 
 from matplotlib import use
-from matplotlib.pyplot import subplots, show, text, xticks
+from matplotlib.pyplot import subplots, show, text, xticks, rcParams
 import matplotlib.dates as mdates
 use("QtAgg")
 
@@ -18,7 +18,7 @@ class PlotThreeYears(object):
             if data[0][i] != 0:
                 stop = i.month - 1
                 break
-
+        rcParams.update({'font.size': 8})
         axes.plot(months[:stop + 1], list(data[0].values())[:stop + 1], linestyle='solid',
                   label=first_year, marker="o")
         axes.plot(months, data[1].values(), linestyle='solid', label=second_year,
@@ -40,6 +40,7 @@ class PlotAverageTime(object):
         fig, axes = subplots(nrows=1, ncols=1, num='Скорость закрытия заявок')
 
         axes.plot(array.keys(), array.values(), marker='o')
+        rcParams.update({'font.size': 8})
 
         for i in array.keys():
             axes.annotate("  " + str(array[i]) + " дней", [i, array[i]])
@@ -60,6 +61,7 @@ class DoneWaitReceive(object):
             if i != 0:
                 break
             stop -= 1
+        rcParams.update({'font.size': 8})
 
         axes.plot(list(data[0].keys())[:stop + 1], list(data[0].values())[:stop + 1], label='Поступившие', marker='o')
         axes.plot(list(data[1].keys())[:stop + 1], list(data[1].values())[:stop + 1], label='Незакрытые', marker='o')
@@ -96,6 +98,7 @@ class Pie(object):
                     explode.append(0.000025 / (i / sum(data.values())))
 
             axes.pie(data.values(), labels=labels, explode=explode)
+            rcParams.update({'font.size': 8})
 
             axes.axis('equal')
             text(0, -1.25, 'Всего заявок:' + str(sum(data.values())), fontsize='x-large', ha='center')

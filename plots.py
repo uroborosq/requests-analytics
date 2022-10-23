@@ -68,8 +68,6 @@ class DoneWaitReceive(object):
         axes.xaxis.set_major_locator(mdates.MonthLocator(interval=1))
         axes.xaxis.set_major_formatter(mdates.DateFormatter('%m'))
 
-        #axes.xaxis.set_minor_locator(mdates.WeekdayLocator(byweekday=6, interval=1))
-
         axes.legend()
         axes.grid(True)
 

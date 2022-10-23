@@ -7,7 +7,7 @@ import files
 
 
 def manager_filter(requests: dict, manager: str) -> dict:
-    if manager == 'Все':
+    if manager == 'Все сотрудники':
         return requests
     filtered = {}
     for i in requests:
@@ -107,7 +107,7 @@ class Done:
         for i in self.array.values():
             if i.date_end != '' and i.status == "Закрыто":
                 if date_begin <= i.date_end.date() <= date_end:
-                    if i.manager == manager or manager == 'Все':
+                    if i.manager == manager or manager == 'Все сотрудники':
                         if not exclude_requests or i.warranty == "Внутренние работы":
                             self.requests[__sunday__(i.date_end.date())] += 1
 
@@ -121,7 +121,7 @@ class Received(object):
         __init_dict__(self.year, date_begin, date_end, mode, 0)
 
         for i in array.values():
-            if date_begin <= i.date_begin.date() <= date_end and (i.manager == manager or manager == 'Все'):
+            if date_begin <= i.date_begin.date() <= date_end and (i.manager == manager or manager == 'Все сотрудники'):
                 if not exclude_requests or i.warranty == "Внутренние работы":
                     if mode == 'month':
                         self.year[datetime(
@@ -139,7 +139,7 @@ class Waiting(object):
         __init_dict__(self.requests, date_begin, date_end, mode, 0)
         if mode == 'week':
             for i in array.values():
-                if i.manager == manager or manager == 'Все':
+                if i.manager == manager or manager == 'Все сотрудники':
                     if i.status == 'Закрыто' and i.date_end != '':
                         if i.date_end.date() <= date_end:
                             if not exclude_requests or i.warranty == "Внутренние работы":
@@ -156,7 +156,7 @@ class Waiting(object):
                             pointer = __time_iter__(pointer, 'week')
         elif mode == 'month':
             for i in array.values():
-                if i.manager == manager or manager == 'Все':
+                if i.manager == manager or manager == 'Все сотрудники':
                     if i.status == 'Закрыто' and i.date_end != '':
                         if i.date_end >= date_end:
                             pointer = __time_iter__(i.date_begin.date(), "month")
@@ -188,7 +188,7 @@ class AverageTime(object):
                 pointer = datetime(pointer.year + 1, 1, 1).date()
 
         for i in array.values():
-            if i.date_end != '' and (i.manager == manager or manager == 'Все'):
+            if i.date_end != '' and (i.manager == manager or manager == 'Все сотрудники'):
                 if i.status == 'Закрыто' and i.date_end.month != datetime.today().month:
                     if not exclude_requests or i.warranty == "Внутренние работы":
                         if self.year.get(datetime(i.date_end.year, i.date_end.month, 1).date()) is not None:
@@ -216,7 +216,7 @@ class Phases(object):
     def __init__(self, data, date_begin, manager, exclude_requests: bool):
         types_total = {}
         for i in data.values():
-            if i.status != 'Закрыто' and (i.manager == manager or manager == 'Все'):
+            if i.status != 'Закрыто' and (i.manager == manager or manager == 'Все сотрудники'):
                 if i.date_begin.date() >= date_begin:
                     if not exclude_requests or i.warranty == "Внутренние работы":
                         if types_total.get(i.phase) is None:
@@ -237,7 +237,7 @@ class Warranty(object):
         output_file = open('ГарантияИстекаетСрок' + str(datetime.today().strftime('%d-%m-%Y-%H-%M')) + '.txt', 'w')
         self.types = {}
         for i in array.values():
-            if i.date_begin.date() >= begin and (i.manager == manager or manager == 'Все'):
+            if i.date_begin.date() >= begin and (i.manager == manager or manager == 'Все сотрудники'):
                 if i.warranty == 'Гарантия' and i.status != 'Закрыто':
                     if timedelta(45, 0, 0, 0, 0) >= datetime.today() - i.date_begin >= timedelta(31, 0, 0, 0, 0):
                         output_file.write(i.id + ' - ' + str((datetime.today() - i.date_begin)) + '\n')
@@ -289,7 +289,7 @@ class Types(object):
         self.begin = begin
         self.end = end
         for i in array.values():
-            if i.manager == manager or manager == 'Все':
+            if i.manager == manager or manager == 'Все сотрудники':
                 if end >= i.date_begin.date() >= begin:
                     tmp = i.warranty if i.warranty is not None else 'Не указано'
                     if types.get(tmp) is None:
@@ -369,7 +369,7 @@ class Priority(object):
         file = open('Приоритеты.txt', 'w')
 
         for i in data.values():
-            if i.status != 'Закрыто' and i.date_begin.date() >= begin and (i.manager == manager or manager == 'Все'):
+            if i.status != 'Закрыто' and i.date_begin.date() >= begin and (i.manager == manager or manager == 'Все сотрудники'):
                 if not exclude_requests or i.warranty == "Внутренние работы":
 
                     if self.requests.get(i.priority) is not None:
@@ -381,9 +381,13 @@ class Priority(object):
             file.write(i + ':\n')
             for j in self.requests[i]:
                 file.write(j + '\n')
-
+        to_remove = []
         for i in self.requests:
             self.requests[i] = len(self.requests[i])
+            if self.requests[i] == 0:
+                to_remove.append(i)
+        for i in to_remove:
+            self.requests.pop(i)
 
     def get(self):
         return self.requests

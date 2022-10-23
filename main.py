@@ -1,17 +1,18 @@
 import datetime
-import sys
 import os
+import sys
 
-from PyQt5.QtWidgets import QMainWindow, QWidget, QLabel, QLineEdit, QPushButton, QGridLayout, QVBoxLayout, \
-    QFormLayout, QApplication, QMessageBox, QGroupBox, QCheckBox, QCalendarWidget, QListWidget, QFileDialog, QDialog, \
-    QListView, QListWidgetItem, QComboBox, QDateEdit, QSpinBox, QHBoxLayout, QDateTimeEdit
 from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QWidget, QLabel, QLineEdit, QPushButton, QGridLayout, QVBoxLayout, \
+    QFormLayout, QApplication, QMessageBox, QGroupBox, QCheckBox, QDialog, \
+    QComboBox, QSpinBox, QHBoxLayout, QDateTimeEdit
 from openpyxl.utils import exceptions
+
 import analytics
 import files
 import plots
 from parser import Parser
-from title_builder import TitleBuilder, DefaultTitleBuilder
+from title_builder import DefaultTitleBuilder
 
 
 class ThreeYearsChooserBuilder:
@@ -75,6 +76,7 @@ class DataAndManagerChooser(QDialog):
         self.layout = QGridLayout()
         self.data_begin_checkbox = None
         self.data_end_checkbox = None
+        self.requests_type_checkbox = None
         if data_begin_enable:
             self.data_begin_label = QLabel("Выберите начало периода")
             self.data_begin_checkbox = QCheckBox('Учитывать дату')
@@ -97,7 +99,7 @@ class DataAndManagerChooser(QDialog):
 
         if manager_enable:
             self.manager_chooser = QComboBox()
-            self.manager_chooser.addItem('Все')
+            self.manager_chooser.addItem('Все сотрудники')
             for i in managers:
                 self.manager_chooser.addItem(i)
 
@@ -370,7 +372,7 @@ class PlotChoice(QWidget):
         button_repeats = QPushButton("Найти повторы заявок")
         button_settings_priorities = QPushButton(
             "Настройки диаграммы приоритетов")
-        button_types = QPushButton("Распределение заявок по гарантийности")
+        button_types = QPushButton("Распределение заявок по видам")
 
         label_clients_counter = QLabel('Клиентов за текущий год насчитано: ' +
                                        str(analytics.ClientsCounter(self.data).get()))
@@ -414,11 +416,11 @@ class PlotChoice(QWidget):
             is_exclude = self.years_window.get_excluding_requests()
             plots.PlotThreeYears([
                 analytics.Received(self.data, 'month', datetime.date(
-                    first_year, 1, 1), datetime.date(first_year, 12, 31), 'Все', is_exclude).get(),
+                    first_year, 1, 1), datetime.date(first_year, 12, 31), 'Все сотрудники', is_exclude).get(),
                 analytics.Received(self.data, 'month', datetime.date(second_year, 1, 1), datetime.date(second_year, 12, 31),
-                                   "Все", is_exclude).get(),
+                                   "Все сотрудники", is_exclude).get(),
                 analytics.Received(self.data, 'month', datetime.date(third_year, 1, 1), datetime.date(third_year, 12, 31),
-                                   "Все", is_exclude).get()
+                                   "Все сотрудники", is_exclude).get()
             ], first_year, second_year, third_year)
 
     def phases(self):
@@ -426,7 +428,7 @@ class PlotChoice(QWidget):
             True, False, True, True)
         if is_submitted:
             title = DefaultTitleBuilder(
-                "Распределение незакрытых заявок по фазам", begin, end, manager).build()
+                "Распределение незакрытых заявок по фазам", begin, end, manager, excluding_status).build()
             plots.Pie(analytics.Phases(self.data, begin, manager, excluding_status).get(), title='Фазы незакрытых заявок',
                       suptitle=title)
 
@@ -435,7 +437,7 @@ class PlotChoice(QWidget):
             True, True, True, True)
         if is_submitted:
             title = DefaultTitleBuilder(
-                "Среднее время выполнения заявок", begin, end, manager).build()
+                "Среднее время выполнения заявок", begin, end, manager, excluding_status).build()
             plots.PlotAverageTime(analytics.AverageTime(
                 self.data, manager, begin, end, excluding_status).get(), title)
 
@@ -444,7 +446,7 @@ class PlotChoice(QWidget):
             True, True, True, True)
         if is_submitted:
             title = DefaultTitleBuilder("Сравнение поступивших, выполненных и ожидающих заявок", begin, end,
-                                        manager).build()
+                                        manager, excluding_status).build()
             plots.DoneWaitReceive([
                 analytics.Received(self.data, 'week', begin,
                                    end, manager, excluding_status).get(),
@@ -464,11 +466,11 @@ class PlotChoice(QWidget):
         self.w.show()
 
     def warranty(self):
-        is_submitted, begin, end, manager = __call_dialog_and_fetch_data__(
+        is_submitted, begin, end, manager, _ = __call_dialog_and_fetch_data__(
             True, False, True, False)
         if is_submitted:
             title = DefaultTitleBuilder(
-                "Распределение незакрытых гарантийных заявок", begin, end, manager).build()
+                "Распределение незакрытых гарантийных заявок", begin, end, manager, False).build()
             plots.Pie(analytics.Warranty(self.data, begin, manager).get(),
                       title,
                       title)
@@ -478,7 +480,7 @@ class PlotChoice(QWidget):
             True, False, True, True)
         if is_submitted:
             title = DefaultTitleBuilder(
-                "Распределение приоритетов в незакрытых заявках", begin, end, manager).build()
+                "Распределение приоритетов в незакрытых заявках", begin, end, manager, excluding_status).build()
             plots.Pie(analytics.Priority(self.data, begin, manager, excluding_status).get(),
                       title,
                       title)
@@ -492,7 +494,7 @@ class PlotChoice(QWidget):
             True, True, True, False)
         if is_submitted:
             title = DefaultTitleBuilder(
-                "Распределение заявок по гарантийности", begin, end, manager).build()
+                "Распределение заявок по гарантийности", begin, end, manager, excluding_status).build()
             plots.Pie(analytics.Types(self.data, begin, end, manager).get(),
                       suptitle=title,
                       title=title)

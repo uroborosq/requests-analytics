@@ -189,7 +189,7 @@ class AverageTime(object):
 
         for i in array.values():
             if i.date_end != '' and (i.manager == manager or manager == 'Все сотрудники'):
-                if i.status == 'Закрыто' and i.date_end.month != datetime.today().month:
+                if i.status == 'Закрыто' and not (i.date_end.month == datetime.today().month and i.date_end.year == datetime.today().year):
                     if not exclude_requests or i.warranty == "Внутренние работы":
                         if self.year.get(datetime(i.date_end.year, i.date_end.month, 1).date()) is not None:
                             self.year[date(i.date_end.year, i.date_end.month, 1)].append(abs(i.date_end - i.date_begin))

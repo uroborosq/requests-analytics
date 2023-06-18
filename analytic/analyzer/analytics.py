@@ -1,180 +1,94 @@
-import json
+import enum
 from datetime import datetime
 from datetime import date
 from datetime import timedelta
 
-import files
+from fs import settings
+import pandas as pd
 
 
-def manager_filter(requests: dict, manager: str) -> dict:
-    if manager == 'Все сотрудники':
-        return requests
-    filtered = {}
-    for i in requests:
-        if requests[i].manager == manager:
-            filtered[i] = requests[i]
-    return filtered
+def __sunday__(to_sunday: datetime) -> date:
+    return (to_sunday + timedelta(6 - to_sunday.weekday(), 0, 0, 0, 0, 0, 0)).date()
+
+def __first_month_day__(to_first: datetime) -> date:
+    return datetime(to_first.year, to_first.month, 1).date()
+
+class TimePeriod(enum.Enum):
+    week = 1
+    month = 2
+
+def __fill_gaps_with_zeros__(df: pd.DataFrame, period: TimePeriod) -> pd.DataFrame:
+    time_period = None
+    match period:
+        case TimePeriod.month:
+            time_period = 'MS'
+        case TimePeriod.week:
+            time_period = 'W'
+
+    idx = pd.date_range(df.index[0], df.index[-1], freq=time_period)
+    return df.reindex(idx, fill_value=0)
 
 
-def warranty_type_filter(requests: dict, type: list[str]) -> dict:
-    filtered = {}
-    for i in requests:
-        if requests[i].warranty in type:
-            filtered[i] = requests[i]
+class AbstractAnalyzer:
+    __df__: pd.DataFrame
 
-    return filtered
+    def __init__(self, df: pd.DataFrame) -> None:
+        self.__df__ = df
 
-
-def __sunday__(to_sunday):
-    return to_sunday + timedelta(6 - to_sunday.weekday(), 0, 0, 0, 0, 0, 0)
+    def get(self) -> pd.DataFrame:
+        pass
 
 
-def __time_iter__(old_date, type_period):
-    if type_period == "year":
-        return datetime(old_date.year + 1, 1, 1)
-    elif type_period == "month":
-        if old_date.month != 12:
-            return datetime(old_date.year, old_date.month + 1, 1).date()
-        else:
-            return datetime(old_date.year + 1, 1, 1).date()
-    elif type_period == "week":
-        return old_date + timedelta(7, 0, 0, 0, 0, 0, 0)
-    elif type_period == "quarter":
-        if old_date.month == 4:
-            return datetime(old_date.year + 1, 1, 1)
-        else:
-            return datetime(old_date.year, old_date.month + 1, 1)
+class ManagersAnalyzer(AbstractAnalyzer):
+    def get(self) -> pd.DataFrame:
+        return self.__df__.groupby(['Исполнитель'])['Исполнитель'].count()
 
 
-def __fix_array__(array, type_period):
-    begin = list(array.keys())[0]
-    end = list(array.keys())[len(array.keys()) - 1]
-    while begin != end:
-        if array.get(begin) is None:
-            array[begin] = 0
-        begin = __time_iter__(begin, type_period)
-    return array
+class DoneRequestsAnalyzer(AbstractAnalyzer):
+    def get(self) -> pd.DataFrame:
+        done = self.__df__[(self.__df__['Статус'] == 'Закрыто') & (~pd.isnull(self.__df__['Дата окончания работ']))]
+        done['Дата окончания работ'] = done['Дата окончания работ'].apply(__sunday__)
+        done['Дата окончания работ'] = done['Дата окончания работ'].apply(lambda x: x.date())
+        return done.groupby(['Дата окончания работ'])['Дата окончания работ'].count()
 
 
-def __sort_by_date__(array):
-    keys = array.keys()
-    keys = sorted(keys)
-
-    new_array = {}
-    for i in keys:
-        new_array[i] = array[i]
-    return new_array
+class ReceivedRequestsWeeksAnalyzer(AbstractAnalyzer):
+    def get(self) -> pd.DataFrame:
+        self.__df__['Дата окончания работ'] = self.__df__['Дата окончания работ'].apply(__sunday__)
+        self.__df__['Дата окончания работ'] = self.__df__['Дата окончания работ'].apply()
+        return self.__df__.groupby(['Дата окончания работ'])['Дата окончания работ'].count()
 
 
-def __init_dict__(array: dict, date_begin: date, date_end: date, mode, value):
-    if mode == 'month':
-        pointer = datetime(date_begin.year, date_begin.month, 1).date()
-        while pointer <= date_end:
-            array[pointer] = value
-            if pointer.month != 12:
-                pointer = datetime(pointer.year, pointer.month + 1, 1).date()
-            else:
-                pointer = datetime(pointer.year + 1, 1, 1).date()
-    elif mode == 'week':
-        pointer = __sunday__(date_begin)
-        while pointer <= date_end:
-            array[pointer] = value
-            pointer = __time_iter__(pointer, 'week')
-        array[pointer] = value
-    return array
+class ReceivedRequestsMonthAnalyzer(AbstractAnalyzer):
+    def get(self) -> pd.DataFrame:
+        self.__df__['Дата окончания работ'] = self.__df__['Дата окончания работ'].apply(__first_month_day__)
+        self.__df__['Дата окончания работ'] = self.__df__['Дата окончания работ'].apply(lambda x: x.date())
+        return self.__df__.groupby(['Дата окончания работ'])['Дата окончания работ'].count()
 
 
-class Managers(object):
-    def __init__(self, data: dict):
-        self.managers = []
+class WaitingRequestAnalyzer(AbstractAnalyzer):
+    def get(self) -> pd.DataFrame:
+        index = pd.date_range(__sunday__(self.__df__['Дата'].min()).date(),
+                              __sunday__(self.__df__['Дата окончания работ'].max().date()), freq='W')
+        result = pd.Series(0, index=index)
 
-        for i in data.values():
-            if i.manager not in self.managers:
-                self.managers.append(i.manager)
-        self.managers.remove(None)
-        self.managers.append('Не выбран')
+        for index, row in self.__df__.iterrows():
+            date_begin = row['Дата'].date()
+            date_end = datetime.today().date()
+            if row['Статус'] == 'Закрыто':
+                date_end = row['Дата окончания работ'].date()
 
-    def get(self):
-        return self.managers
+            request_time_range = pd.date_range(__sunday__(date_begin), __sunday__(date_end), freq='W')
+            request_time_series = pd.Series(1, index=request_time_range)
+            result = result.add(request_time_series, fill_value=0).astype('Int64')
 
-
-class Done:
-    def __init__(self, requests, date_begin, date_end, manager, exclude_requests):
-        self.array = dict(requests)
-        self.requests = {}
-        __init_dict__(self.requests, date_begin, date_end, 'week', 0)
-
-        for i in self.array.values():
-            if i.date_end != '' and i.status == "Закрыто":
-                if date_begin <= i.date_end.date() <= date_end:
-                    if i.manager == manager or manager == 'Все сотрудники':
-                        if not exclude_requests or i.warranty == "Внутренние работы":
-                            self.requests[__sunday__(i.date_end.date())] += 1
-
-    def get(self):
-        return self.requests
+        return result
 
 
-class Received(object):
-    def __init__(self, array, mode, date_begin, date_end, manager, exclude_requests: bool):
-        self.year = {}
-        __init_dict__(self.year, date_begin, date_end, mode, 0)
-
-        for i in array.values():
-            if date_begin <= i.date_begin.date() <= date_end and (i.manager == manager or manager == 'Все сотрудники'):
-                if not exclude_requests or i.warranty == "Внутренние работы":
-                    if mode == 'month':
-                        self.year[datetime(
-                            i.date_begin.year, i.date_begin.month, 1).date()] += 1
-                    elif mode == 'week':
-                        self.year[__sunday__(i.date_begin.date())] += 1
-
-    def get(self):
-        return self.year
-
-
-class Waiting(object):
-    def __init__(self, array, date_begin, date_end, manager, mode, exclude_requests: bool):
-        self.requests = {}
-        __init_dict__(self.requests, date_begin, date_end, mode, 0)
-        if mode == 'week':
-            for i in array.values():
-                if i.manager == manager or manager == 'Все сотрудники':
-                    if i.status == 'Закрыто' and i.date_end != '':
-                        if i.date_end.date() <= date_end:
-                            if not exclude_requests or i.warranty == "Внутренние работы":
-                                pointer = __sunday__(i.date_begin).date()
-                                while pointer < i.date_end.date():
-                                    if self.requests.get(pointer) is not None:
-                                        self.requests[pointer] += 1
-                                    pointer = __time_iter__(pointer, 'week')
-                    elif i.status != 'Закрыто':
-                        pointer = __sunday__(i.date_begin).date()
-                        while pointer < datetime.today().date():
-                            if self.requests.get(pointer) is not None:
-                                self.requests[pointer] += 1
-                            pointer = __time_iter__(pointer, 'week')
-        elif mode == 'month':
-            for i in array.values():
-                if i.manager == manager or manager == 'Все сотрудники':
-                    if i.status == 'Закрыто' and i.date_end != '':
-                        if i.date_end >= date_end:
-                            pointer = __time_iter__(i.date_begin.date(), "month")
-                            while pointer < i.date_end.date():
-                                if self.requests.get(pointer) is not None:
-                                    self.requests[pointer] += 1
-                                pointer = __time_iter__(pointer, mode)
-
-                    elif i.status != 'Закрыто':
-                        pointer = __sunday__(i.date_begin).date()
-                        while pointer < datetime.today().date():
-                            if self.requests.get(pointer) is not None:
-                                self.requests[pointer] += 1
-                            pointer = __time_iter__(pointer, mode)
-
-    def get(self):
-        return self.requests
-
+class AverageTimeAnalyzer(AbstractAnalyzer):
+    def get(self) -> pd.DataFrame:
+        self.__df__ = self.__df__['Дата окончания работ'].apply(__first_month_day__)
+        self.__df__ = self.__df__.groupby(['Дата окончания работ'])
 
 class AverageTime(object):
     def __init__(self, array: dict, manager, begin, end, exclude_requests: bool):
@@ -327,11 +241,11 @@ class ClientsCounter(object):
 
 
 class DaySchedule(object):
-    def __init__(self, data, date):
+    def __init__(self, data, given_date):
         self.request = {}
         for i in data.values():
             if i.begin_working != '':
-                if i.begin_working.date() == date.date():
+                if i.begin_working.date() == given_date.date():
                     if self.request.get(i.id) is None:
                         self.request[i.id] = [[i.engineer, i.warranty, i.address]]
                     else:

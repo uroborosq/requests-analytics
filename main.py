@@ -8,10 +8,10 @@ from PyQt5.QtWidgets import QWidget, QLabel, QLineEdit, QPushButton, QGridLayout
     QComboBox, QSpinBox, QHBoxLayout, QDateTimeEdit
 from openpyxl.utils import exceptions
 
-import analytics
-import files
+import analytic.analyzer as analytics
+from fs import settings
 import plots
-from parser import Parser
+from parser.parser import Parser
 from title_builder import DefaultTitleBuilder
 
 

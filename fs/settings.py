@@ -128,22 +128,7 @@ def get_settings():
                         settings[dct][key] = default_settings()[dct][key]
         settings[0]['version'] = default_settings()[0]['version']
 
-    except FileNotFoundError:
-        settings = default_settings()
-        file = open('.settings.json', 'w')
-        json.dump(settings, file, indent=4)
-        file.close()
-    except json.decoder.JSONDecodeError:
-        settings = default_settings()
-        file = open('.settings.json', 'w')
-        json.dump(settings, file, indent=4)
-        file.close()
-    except KeyError:
-        settings = default_settings()
-        file = open('.settings.json', 'w',)
-        json.dump(settings, file, indent=4)
-        file.close()
-    except IndexError:
+    except FileNotFoundError or KeyError or json.decoder.JSONDecodeError or IndexError:
         settings = default_settings()
         file = open('.settings.json', 'w')
         json.dump(settings, file, indent=4)

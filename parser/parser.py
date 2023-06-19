@@ -23,7 +23,7 @@ class Parser(object):
         df = df.drop(['№ п/п'], axis=1)
         df = df.drop(['Дата начала работ'], axis=1)
         for column in ['Дата', 'Дата окончания работ']:
-            df[column] = pd.to_datetime(df[column], errors='coerce')
+            df[column] = pd.to_datetime(df[column], errors='coerce', format='%d.%m.%Y %H:%M:%S')
         valid = df[(~pd.isnull(df['Дата окончания работ'])) | (df['Статус'] != 'Закрыто')]
 
         self.requests = valid[datetime.today() >= valid['Дата окончания работ']]

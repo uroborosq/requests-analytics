@@ -2,7 +2,6 @@ from datetime import datetime
 
 
 class Request(object):
-
     def __init__(self, begin_, begin_working_, end_, id_, status_, manager_, engineer_, warranty_, request_state_,
                  client_, address_, model_, priority_):
         self.date_begin = datetime.strptime(begin_, '%d.%m.%Y %H:%M:%S')

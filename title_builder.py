@@ -43,4 +43,3 @@ class DefaultTitleBuilder:
 
     def build(self):
         return self.__result__
-

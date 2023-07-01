@@ -1,156 +1,89 @@
-import openpyxl
-from openpyxl import styles
 import json
+import pickle
 
 
-class DaySchedule(object):
-    def __init__(self, data, date):
-        self.date = date
-        wb = openpyxl.Workbook()
-        worksheet = wb['Sheet']
-        worksheet['B2'] = 'Дата'
-        worksheet['C2'] = str(date.strftime('%d-%m-%Y'))
-        for i in ['A', 'B', 'C', 'D', 'E']:
-            worksheet.merge_cells(i + '4:' + i + '5')
-        worksheet.merge_cells('F4:K4')
-        worksheet.merge_cells('L4:M4')
+class AutocompletionUnit:
+    comp: dict[str, object]
 
-        tmp = {'A4': '№ п/п', 'B4': '№ наряд-заказа', 'C4': 'Исполнитель', 'D4': 'Гарантия/внутр/платно',
-               'E4': 'Сколько ЗИП потратил', 'F4': 'В электронном виде прислал', 'F5': 'Описание работ',
-               'G5': 'Наряд-заказ',
-               'H5': 'Гарталон', 'I5': 'Сер номер', 'J5': 'Деталь', 'K5': 'Шильда', 'L4': 'Сдал в бумажном виде',
-               'L5': 'Наряд-заказ', 'M5': 'Накладные'}
-        for i in tmp:
-            worksheet[i] = tmp[i]
+    def __init__(self, save_func):
+        self.comp = {}
+        self.__save_func__ = save_func
 
-        tmp = {'A': 4, 'B': 11, 'C': 30, 'D': 10, 'E': 12,
-               'F': 35, 'G': 6, 'H': 6, 'I': 7, 'J': 35, 'L': 6, 'M': 6, 'K': 6}
+    def get(self, key: str):
+        return self.comp.get(key)
 
-        worksheet['F4'].alignment = styles.Alignment(horizontal="center")
-        worksheet['L4'].alignment = styles.Alignment(horizontal="center")
-        for i in tmp:
-            cl = worksheet.column_dimensions[i]
-            cl.width = tmp[i]
-
-        counter = 1
-        for i in data:
-            for j in data[i]:
-                worksheet['A' + str(counter + 5)] = counter # номер
-                worksheet['B' + str(counter + 5)] = i # наряд заказ
-                worksheet['D' + str(counter + 5)] = j[1]
-                tmp = ''
-                for k in j[0]:
-                    if k is not None:
-                        tmp += k + ' \n '
-                if j[2] is None:
-                    tmp += 'Адрес не указан'
-                else:
-                    tmp += j[2]
-                worksheet['C' + str(counter + 5)] = tmp
-                counter += 1
-        worksheet.row_dimensions[4].height = 40
-        worksheet.row_dimensions[5].height = 40
-        for i in range(counter + 2):
-            rw = worksheet.row_dimensions[i + 6]
-            rw.height = 60
-
-        tmp = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M']
-        for i in range(13):
-            for j in range(counter + 2):
-                tmp.append(tmp[i] + str(j + 6))
-
-        for i in ['B2', 'C2', 'A4', 'B4', 'C4', 'D4', 'E4', 'F4', 'F5', 'G5', 'H5', 'I5', 'J5', 'K5', 'L4', 'L5', 'M5',
-                  'A5', 'B5', 'C5', 'D5', 'E5', 'M4', 'G4', 'H4', 'I4', 'J4', 'K4'] + tmp[13:]:
-            worksheet[i].border = styles.Border(top=styles.Side(border_style="thin", color="000000"),
-                                                left=styles.Side(
-                                                    border_style="thin", color="000000"),
-                                                right=styles.Side(
-                                                    border_style="thin", color="000000"),
-                                                bottom=styles.Side(border_style="thin", color="000000"))
-        for i in tmp[13:]:
-            worksheet[i].alignment = styles.Alignment(
-                horizontal='center', vertical='center')
-
-        for row in worksheet.iter_rows():
-            for cell in row:
-                cell.alignment = cell.alignment.copy(wrapText=True)
-
-        wb.save('DaySchedule' + str(date.strftime('%d-%m-%Y')) + '.xlsx')
-
-    def get(self):
-        return 'DaySchedule' + str(self.date.strftime('%d-%m-%Y')) + '.xlsx'
+    def set(self, key: str, value) -> None:
+        self.comp[key] = value
+        self.__save_func__()
 
 
-def default_settings():
-    return [
-        {
-            "version": "1.1.2"
-        },
-        {
+class Settings:
+    version: str
+    autocompletion: dict[str, AutocompletionUnit]
+    priorities: list[str]
+    columns: dict[str, str]
 
-        },
-        {
-            'id': 'B',
-            'date_begin': 'E',
-            'date_begin_working': 'F',
-            'date_end': 'H',
-            'status': 'I',
-            'manager': 'J',
-            'type': 'L',
-            'phase': 'M',
-            'engineer': 'N',
-            'client': 'O',
-            'address': 'P',
-            'model': 'K',
-            'priority': 'R',
-            'lines_to_skip': '6'
-        },
-        {
-            'Гарантия14 дн.': [],
-            'ФОК-Гарантия': [],
-            'Население-Гарантия': [],
-            'ФОК-Платно': [],
-            'Население-платно': [],
-            'Внутренние работы': []
-        }
-    ]
+    def __init__(self):
+        self.version = "2.0.0 alpha"
+        self.priorities = []
+        self.columns = {}
+        self.autocompletion = {}
+
+    def set_default(self):
+        self.version = "2.0.0 alpha"
+        self.priorities = ['Гарантия14 дн.', 'ФОК-Гарантия', 'Население-Гарантия', 'ФОК-Платно', 'Население-платно', 'Внутренние работы']
+        self.columns = {}
+        self.autocompletion = {}
 
 
-def get_settings():
-    try:
-        file = open('.settings.json', 'r')
-        settings = json.load(file)
-        file.close()
-        if settings[0]['version'] != default_settings()[0]['version']:
-            for dct in range(len(settings)):
-                for key in default_settings()[dct]:
-                    if settings[dct].get(key) is None:
-                        settings[dct][key] = default_settings()[dct][key]
-        settings[0]['version'] = default_settings()[0]['version']
+class SettingsManager:
+    __file_settings_path__: str
+    __settings__: Settings
 
-    except FileNotFoundError or KeyError or json.decoder.JSONDecodeError or IndexError:
-        settings = default_settings()
-        file = open('.settings.json', 'w')
-        json.dump(settings, file, indent=4)
-        file.close()
-    return settings
+    def __init__(self, file_settings_path: str):
+        try:
+            self.__file_settings_path__ = file_settings_path
+            settings_file = open(self.__file_settings_path__, 'rb')
+            self.__settings__ = pickle.load(settings_file, fix_imports=True)
+            settings_file.close()
+        except Exception as e:
+            self.set_default()
 
+    def get_autocompletion(self, autocompletion_unit: str, key: str) -> str | None:
+        unit = self.__settings__.autocompletion.get(autocompletion_unit)
+        if unit is None:
+            return None
+        return unit.get(key)
 
-def set_settings(index, key, value):
-    try:
-        settings = get_settings()
-        file = open('.settings.json', 'w')
-        settings[index][key] = value
-        json.dump(settings, file, indent=4)
-        file.close()
-    except KeyError or IndexError:
-        print('error')
+    def set_autocompletion(self, autocompletion_unit: str, key: str, value: str) -> None:
+        if self.__settings__.autocompletion.get(autocompletion_unit) is None:
+            self.__settings__.autocompletion[autocompletion_unit] = AutocompletionUnit(self.save)
+        self.__settings__.autocompletion[autocompletion_unit].set(key, value)
+        self.save()
 
-def len_dct(index):
-    return len(get_settings()[index])
+    def set_default(self):
+        self.__settings__ = Settings()
+        self.__settings__.set_default()
+        self.save()
 
+    def get_version(self) -> str:
+        return self.__settings__.version
 
-def set_default(index):
-    settings = get_settings()
-    settings[index] = default_settings()[index]
-    json.dump(settings, open('.settings.json', 'w'), indent=4)
+    def get_priorities(self) -> list[str]:
+        return self.__settings__.priorities
+
+    def set_priorities(self, new_priorities: list[str]) -> None:
+        self.__settings__.priorities = new_priorities
+        self.save()
+
+    def get_autocompletion_unit(self, key):
+        unit = self.__settings__.autocompletion.get(key)
+        if unit is None:
+            self.__settings__.autocompletion[key] = AutocompletionUnit(self.save)
+        return self.__settings__.autocompletion[key]
+
+    def save(self):
+        settings_file = open(self.__file_settings_path__, 'wb')
+        pickle.dump(self.__settings__, settings_file, fix_imports=True)
+        settings_file.close()
+

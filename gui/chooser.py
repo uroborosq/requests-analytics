@@ -2,6 +2,7 @@ import datetime
 import fs.settings
 
 import pandas as pd
+import numpy as np
 from PyQt5.QtWidgets import QPushButton, QCheckBox, QComboBox, QDateTimeEdit, QLabel, QDialog, QGridLayout, QGroupBox, \
     QHBoxLayout, QVBoxLayout, QSpinBox, QDoubleSpinBox
 
@@ -66,7 +67,7 @@ class DataAndManagerChooser(QDialog):
                 if manager == 'Все сотрудники':
                     self.manager_chooser.setCurrentIndex(0)
                 elif manager in managers:
-                    self.manager_chooser.setCurrentIndex(managers.index(manager))
+                    self.manager_chooser.setCurrentIndex(np.where(managers == manager)[0][0] + 1)
 
             self.layout.addWidget(self.manager_chooser)
 

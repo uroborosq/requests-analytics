@@ -114,7 +114,7 @@ class SLPlot:
     def __init__(self, data: pd.Series, title: str, limit_level: float):
         fig, axes = subplots(nrows=1, ncols=1, num='SL KPI')
 
-        if len(data) != 0:
+        if "Общий" in data.index:
             average = data['Общий']
             title = title + "\nСредний SL = {:.1f} %".format(average)
             data = data.drop('Общий')
